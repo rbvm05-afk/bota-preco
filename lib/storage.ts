@@ -3,7 +3,7 @@ import type { PricingInput, PricingResult } from "@/types/pricing";
 export type SavedCalculation = {
   id: string;
   createdAt: string;
-  mode: "rapidin" | "completin";
+  mode: "rapidin" | "completao" | "completin";
   input: PricingInput;
   result: PricingResult;
 };
