@@ -1,8 +1,5 @@
 /**
  * Domain Layer 2.0 — fachada pública.
- * Produtos: src/domain/products (fonte única).
- * Pricing: src/domain/pricing (único ponto de cálculo).
- * Materiais/unidades: ainda em src/knowledge (próximos épicos).
  */
 
 export {
@@ -14,7 +11,18 @@ export {
   searchProducts,
   baseQuestions,
   toProductSuggestion,
+  getBlueprint,
+  getSuggestedIngredients,
+  getSuggestedPackaging,
+  getDefaultYield,
+  getDefaultLoss,
+  getCategory,
+  getQuestions,
+  getInputDefaults,
+  productBlueprints,
 } from "./products";
+
+export type { ProductBlueprint } from "./products";
 
 export type {
   DomainProduct,
@@ -45,3 +53,21 @@ export {
   packagingRequiredUnits,
   money,
 } from "./pricing";
+
+export {
+  buildSmartPricingReport,
+  simulateSellPrice,
+  buildExplanation,
+  diagnoseRecommended,
+  assessConfidence,
+  buildInsights,
+} from "./insights";
+
+export type {
+  SmartPricingReport,
+  PricingDiagnosis,
+  ConfidenceReport,
+  PricingInsight,
+  SimulationResult,
+  PriceExplanation,
+} from "./insights";
