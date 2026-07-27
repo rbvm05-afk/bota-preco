@@ -61,6 +61,7 @@ export function PricingWizard({ mode }: { mode: "rapidin" | "completao" }) {
   const [stepIndex, setStepIndex] = useState(0);
   const [input, setInput] = useState<PricingInput>(() => emptyInput(isComplete));
   const [draftRestored, setDraftRestored] = useState(false);
+  const [confirmReset, setConfirmReset] = useState(false);
 
   useEffect(() => {
     const draft = loadDraft(mode);
@@ -102,7 +103,6 @@ export function PricingWizard({ mode }: { mode: "rapidin" | "completao" }) {
   const currentQuestion =
     currentStep?.kind === "question" ? questions[currentStep.questionIndex] : null;
   const isReview = currentStep?.kind === "review";
-  const percent = progressPercent(safeIndex, flow.length);
   const issues = useMemo(() => validateInput(input, questions), [input, questions]);
 
   useEffect(() => {
@@ -143,6 +143,15 @@ export function PricingWizard({ mode }: { mode: "rapidin" | "completao" }) {
     router.push("/resultado");
   };
 
+  const startOver = () => {
+    clearDraft(mode);
+    setInput(emptyInput(isComplete));
+    setStepIndex(0);
+    setDraftRestored(false);
+    lastProfileId.current = null;
+    setConfirmReset(false);
+  };
+
   const completed = (id: string) => {
     const idx = flow.findIndex((s) => s.id === id);
     return idx >= 0 && idx < safeIndex;
@@ -155,27 +164,62 @@ export function PricingWizard({ mode }: { mode: "rapidin" | "completao" }) {
         current={safeIndex + 1}
         total={flow.length}
         labels={flow.map((s) => s.label)}
-        showTotal={!isComplete}
-        percent={percent}
       />
       {showSummary && (
         <LiveSummary
           input={input}
-          showLabor={completed("hourlyRate")}
+          showLabor={completed("hours") || completed("hourlyRate")}
           showPackaging={completed("packaging")}
           showExtras={completed("extras")}
         />
       )}
 
       <section className="surface animate-rise rounded-[2.2rem] p-5 sm:p-8">
-        <div className="mb-7 flex items-center justify-between gap-3 border-b border-[var(--border)] pb-5">
+        <div className="mb-7 flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border)] pb-5">
           <span className="rounded-full bg-[var(--green-soft)] px-3 py-1.5 text-xs font-black uppercase tracking-[.14em] text-[var(--green)]">
             {isComplete ? "🎯 Completão" : "⚡ Rapidin"}
           </span>
-          <span className="text-right text-xs font-bold text-[var(--muted)]">
-            {draftRestored ? "💾 Rascunho recuperado" : "💾 Progresso salvo automaticamente"}
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="hidden text-right text-xs font-bold text-[var(--muted)] sm:inline">
+              {draftRestored ? "💾 Rascunho recuperado" : "💾 Salvo automaticamente"}
+            </span>
+            <button
+              type="button"
+              onClick={() => setConfirmReset(true)}
+              className="rounded-full border border-[var(--border)] bg-white px-3 py-1.5 text-xs font-black text-[var(--muted)] transition hover:border-[var(--green)] hover:text-[var(--green)]"
+            >
+              Novo cálculo
+            </button>
+          </div>
         </div>
+
+        {confirmReset && (
+          <div
+            className="mb-6 rounded-2xl border border-[var(--border)] bg-[#fffaf0] p-4 sm:p-5"
+            role="dialog"
+            aria-modal="true"
+          >
+            <p className="font-bold leading-6 text-[var(--foreground)]">
+              Quer começar um novo cálculo? As informações preenchidas neste rascunho serão apagadas.
+            </p>
+            <div className="mt-4 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={() => setConfirmReset(false)}
+                className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 font-black"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={startOver}
+                className="rounded-2xl bg-[var(--green)] px-4 py-3 font-black text-white"
+              >
+                Começar do zero
+              </button>
+            </div>
+          </div>
+        )}
 
         {isReview ? (
           <ReviewStep input={input} profile={profile} issues={issues} onEdit={goTo} />
