@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { calculatePrice, money } from "@/src/domain/pricing";
 import type { PricingInput } from "@/types/pricing";
 
+/**
+ * Durante o questionário: só status de preenchimento — sem valores financeiros.
+ */
 export function LiveSummary({
   input,
   showLabor,
@@ -15,49 +16,28 @@ export function LiveSummary({
   showPackaging: boolean;
   showExtras: boolean;
 }) {
-  const [open, setOpen] = useState(false);
+  const materialsOk =
+    input.materials.filter((m) => m.name.trim() && m.paid > 0 && m.usedAmount > 0).length > 0;
+  const packagingOk =
+    (input.packagingItems ?? []).filter((p) => p.name.trim() && p.paid > 0).length > 0;
+  const laborOk = input.workHours > 0 && input.hourlyRate > 0;
 
-  /** Tudo vem do engine — UI não calcula. */
-  const result = useMemo(() => calculatePrice(input), [input]);
+  const lines: string[] = [];
+  if (materialsOk) lines.push("Ingredientes preenchidos");
+  if (showPackaging && packagingOk) lines.push("Embalagem preenchida");
+  if (showLabor && !laborOk) lines.push("Ainda falta informar seu tempo");
+  else if (showLabor && laborOk) lines.push("Tempo informado");
+  if (showExtras && input.extraCosts > 0) lines.push("Extras informados");
 
-  // Materiais “até agora” sem perda (igual comportamento visual 1.9.x no meio do fluxo)
-  const materialsLive = result.materialsBatch - result.wasteBatch;
-  const totalLive = result.totalBatch - result.wasteBatch;
+  if (lines.length === 0) return null;
 
   return (
-    <div className={`live-summary ${open ? "live-summary-open" : ""}`}>
-      <button
-        type="button"
-        className="live-summary-toggle"
-        onClick={() => setOpen((value) => !value)}
-        aria-expanded={open}
-      >
-        <span className="flex items-center gap-2">
-          <span aria-hidden="true">🧾</span>
-          <strong>Sua conta até agora</strong>
+    <div className="completion-hints mb-4" aria-live="polite">
+      {lines.map((line) => (
+        <span key={line} className="completion-chip">
+          {line}
         </span>
-        <span className="flex items-center gap-3">
-          <strong>{money(totalLive)}</strong>
-          <span aria-hidden="true">{open ? "⌃" : "⌄"}</span>
-        </span>
-      </button>
-      <div className="live-summary-body">
-        <SummaryRow icon="📦" label="Materiais" value={materialsLive} />
-        {showLabor && <SummaryRow icon="⏱️" label="Seu trabalho" value={result.laborBatch} />}
-        {showPackaging && <SummaryRow icon="🛍️" label="Embalagem" value={result.packagingBatch} />}
-        {showExtras && <SummaryRow icon="✨" label="Extras" value={result.extrasBatch} />}
-      </div>
-    </div>
-  );
-}
-
-function SummaryRow({ icon, label, value }: { icon: string; label: string; value: number }) {
-  return (
-    <div className="live-summary-row">
-      <span>
-        {icon} {label}
-      </span>
-      <strong>{money(value)}</strong>
+      ))}
     </div>
   );
 }
