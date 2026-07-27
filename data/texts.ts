@@ -1,12 +1,12 @@
 export const texts = {
   home: {
-    eyebrow: "Preço sem chute",
-    title: "Será que sua conta está completa?",
+    eyebrow: "Feito para quem vende o que sabe fazer",
+    title: "Você faz com carinho 🫶 O preço precisa fazer sentido.",
     description:
-      "O Bota Preço ajuda você a juntar ingredientes, tempo, embalagem e outros gastos para descobrir quanto faz sentido cobrar.",
-    rapidin: "Quero calcular rapidin",
-    rapidinHelp: "Poucas perguntas e algumas estimativas.",
-    completin: "Quero calcular completin",
-    completinHelp: "Mais detalhes e menos estimativas.",
+      "De brigadeiro a crochê, o Bota Preço conversa com você, lembra dos gastos que passam batido e ajuda a cobrar sem culpa e sem chute.",
+    rapidin: "Bota Preço Rapidin",
+    rapidinHelp: "Uma conta rápida, simples e direta para chegar numa boa referência sem cansar.",
+    completao: "Bota Preço Completão",
+    completaoHelp: "Uma conta mais detalhada, que olha os custos com mais cuidado para chegar a um preço mais preciso.",
   },
 };

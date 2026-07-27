@@ -1,5 +1,5 @@
-import { PricingWizard } from "@/components/PricingWizard";
+import { redirect } from "next/navigation";
 
-export default function CompletinPage() {
-  return <PricingWizard mode="completin" />;
+export default function CompletinRedirect() {
+  redirect("/completao");
 }
