@@ -1,0 +1,28 @@
+import type { KnowledgeItem } from "./types";
+
+export const knowledgeCatalog: KnowledgeItem[] = [
+  { id: "ING001", name: "Leite condensado", category: "ingrediente", aliases: ["condensado", "leite moça", "moca"], defaultUnit: "g", allowedUnits: ["g", "kg"] },
+  { id: "ING002", name: "Creme de leite", category: "ingrediente", aliases: ["nata", "creme"], defaultUnit: "g", allowedUnits: ["g", "kg"] },
+  { id: "ING003", name: "Chocolate 50%", category: "ingrediente", aliases: ["chocolate meio amargo", "cacau 50"], defaultUnit: "g", allowedUnits: ["g", "kg"] },
+  { id: "ING004", name: "Chocolate 70%", category: "ingrediente", aliases: ["chocolate amargo", "cacau 70"], defaultUnit: "g", allowedUnits: ["g", "kg"] },
+  { id: "ING005", name: "Manteiga", category: "ingrediente", aliases: ["margarina"], defaultUnit: "g", allowedUnits: ["g", "kg"] },
+  { id: "ING006", name: "Granulado", category: "decoracao", aliases: ["confeito", "granulado de chocolate"], defaultUnit: "g", allowedUnits: ["g", "kg"] },
+  { id: "ING007", name: "Farinha de trigo", category: "ingrediente", aliases: ["farinha"], defaultUnit: "g", allowedUnits: ["g", "kg"] },
+  { id: "ING008", name: "Açúcar", category: "ingrediente", aliases: ["acucar", "açúcar refinado"], defaultUnit: "g", allowedUnits: ["g", "kg"] },
+  { id: "ING009", name: "Ovos", category: "ingrediente", aliases: ["ovo"], defaultUnit: "un", allowedUnits: ["un"] },
+  { id: "ING010", name: "Leite", category: "ingrediente", aliases: ["leite integral"], defaultUnit: "l", allowedUnits: ["ml", "l"] },
+  { id: "ING011", name: "Arroz", category: "ingrediente", aliases: [], defaultUnit: "g", allowedUnits: ["g", "kg"] },
+  { id: "ING012", name: "Proteína", category: "ingrediente", aliases: ["carne", "frango", "peixe"], defaultUnit: "g", allowedUnits: ["g", "kg"] },
+  { id: "ING013", name: "Legumes", category: "ingrediente", aliases: ["vegetais"], defaultUnit: "g", allowedUnits: ["g", "kg"] },
+  { id: "ING014", name: "Temperos", category: "ingrediente", aliases: ["tempero"], defaultUnit: "g", allowedUnits: ["g", "kg"] },
+  { id: "MAT001", name: "Cera de soja", category: "material", aliases: ["soja", "cera vegetal"], defaultUnit: "g", allowedUnits: ["g", "kg"] },
+  { id: "MAT002", name: "Cera de coco", category: "material", aliases: ["coco"], defaultUnit: "g", allowedUnits: ["g", "kg"] },
+  { id: "MAT003", name: "Cera de abelha", category: "material", aliases: ["abelha"], defaultUnit: "g", allowedUnits: ["g", "kg"] },
+  { id: "MAT004", name: "Essência aromática", category: "material", aliases: ["essencia", "fragrância", "fragrancia"], defaultUnit: "ml", allowedUnits: ["ml", "l"] },
+  { id: "MAT005", name: "Pavio de algodão", category: "material", aliases: ["pavio", "barbante"], defaultUnit: "cm", allowedUnits: ["cm", "m"] },
+  { id: "MAT006", name: "Pavio de madeira", category: "material", aliases: ["madeira"], defaultUnit: "un", allowedUnits: ["un"] },
+  { id: "MAT007", name: "Linha de crochê", category: "material", aliases: ["linha", "fio de croche", "fio"], defaultUnit: "m", allowedUnits: ["cm", "m"] },
+  { id: "EMB001", name: "Pote de vidro", category: "embalagem", aliases: ["vidro", "frasco"], defaultUnit: "un", allowedUnits: ["un"] },
+  { id: "EMB002", name: "Caixa de papelão", category: "embalagem", aliases: ["caixa", "papelao"], defaultUnit: "un", allowedUnits: ["un"] },
+  { id: "EMB003", name: "Etiqueta adesiva", category: "embalagem", aliases: ["etiqueta", "adesivo", "rótulo", "rotulo"], defaultUnit: "un", allowedUnits: ["un"] },
+];
