@@ -1,47 +1,31 @@
-# Bota Preço — MVP
+# Bota Preço 1.9.3
 
-Projeto completo em Next.js para o MVP inicial do Bota Preço.
+Aplicativo de precificação simples para pequenos produtores.
 
-## O que já funciona
-
-- Home
-- Fluxo Rapidin
-- Fluxo Completin
-- Ingredientes e materiais
-- Rendimento
-- Tempo e valor da hora
-- Embalagem
-- Outros gastos
-- Margem
-- Motor de cálculo separado
-- Resultado com faixas vermelho, amarelo e verde
-- Histórico salvo no navegador
-- Layout responsivo
-
-## Como instalar
-
-Abra o Terminal dentro da pasta do projeto e rode:
+## Rodar a partir do GitHub
 
 ```bash
+git clone https://github.com/rbvm05-afk/bota-preco.git
+cd bota-preco
 npm install
 npm run dev
 ```
 
-Depois abra:
+Abra http://localhost:3000
 
-```text
-http://localhost:3000
+## Build de produção
+
+```bash
+npm run build
+npm start
 ```
 
-## Como substituir o projeto antigo
+## Versão
 
-1. Pare o servidor antigo com `Control + C`.
-2. Renomeie a pasta antiga para `bota-preco-antigo`.
-3. Descompacte este ZIP.
-4. Entre na nova pasta.
-5. Rode `npm install`.
-6. Rode `npm run dev`.
+O rodapé mostra versão, data, hora e resumo da build (fonte: `lib/version.ts`).
 
-## Observação
+## Referências externas de preço (opcional)
 
-O histórico usa `localStorage`, então ainda não existe login nem banco de dados. Isso é proposital para manter o MVP simples.
+Crie `.env.local` a partir de `.env.example` se for usar Mercado Livre / Open Food Facts.
+
+Sem token, o restante do app continua funcionando.
