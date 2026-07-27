@@ -4,13 +4,12 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { calculatePrice } from "@/src/domain/pricing";
 import { saveCalculation } from "@/lib/storage";
-import { clearDraft, loadDraft, saveDraft } from "@/lib/draft";
+import { clearDraft, loadDraft, saveDraft } from "@/lib/DraftManager";
 import { resolveProfile } from "@/engine/profiles";
 import { getInputDefaults } from "@/src/domain/products";
 import {
   buildFlow,
   clampStepIndex,
-  progressPercent,
   validateInput,
 } from "@/src/domain/flow";
 import type { WizardQuestion } from "@/engine/types";
@@ -22,8 +21,8 @@ import { PackagingEditor } from "./PackagingEditor";
 import { ProductNameInput } from "./ProductNameInput";
 import { PrimaryButton } from "./PrimaryButton";
 import { Progress } from "./Progress";
-import { Tip } from "./Tip";
-import { LiveSummary } from "./LiveSummary";
+import { WizardContextPanel } from "./WizardContextPanel";
+import { getStepContext } from "@/src/domain/wizard";
 import { AdSlot } from "./AdSlot";
 import { ReviewStep } from "./ReviewStep";
 
@@ -152,11 +151,10 @@ export function PricingWizard({ mode }: { mode: "rapidin" | "completao" }) {
     setConfirmReset(false);
   };
 
-  const completed = (id: string) => {
-    const idx = flow.findIndex((s) => s.id === id);
-    return idx >= 0 && idx < safeIndex;
-  };
-  const showSummary = completed("materials") && !isReview;
+  const contextItems = useMemo(
+    () => getStepContext(currentQuestion, input, isReview),
+    [currentQuestion, input, isReview]
+  );
 
   return (
     <AppShell compact>
@@ -165,14 +163,6 @@ export function PricingWizard({ mode }: { mode: "rapidin" | "completao" }) {
         total={flow.length}
         labels={flow.map((s) => s.label)}
       />
-      {showSummary && (
-        <LiveSummary
-          input={input}
-          showLabor={completed("hours") || completed("hourlyRate")}
-          showPackaging={completed("packaging")}
-          showExtras={completed("extras")}
-        />
-      )}
 
       <section className="surface animate-rise rounded-[2.2rem] p-5 sm:p-8">
         <div className="mb-7 flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border)] pb-5">
@@ -181,7 +171,7 @@ export function PricingWizard({ mode }: { mode: "rapidin" | "completao" }) {
           </span>
           <div className="flex items-center gap-2">
             <span className="hidden text-right text-xs font-bold text-[var(--muted)] sm:inline">
-              {draftRestored ? "💾 Rascunho recuperado" : "💾 Salvo automaticamente"}
+              {draftRestored ? "Rascunho recuperado" : "Salvo automaticamente"}
             </span>
             <button
               type="button"
@@ -231,6 +221,8 @@ export function PricingWizard({ mode }: { mode: "rapidin" | "completao" }) {
             update={update}
           />
         )}
+
+        <WizardContextPanel items={contextItems} />
 
         {isComplete && safeIndex === 5 && !isReview && (
           <AdSlot placement="completao-mid-flow" className="mt-8" />
@@ -311,7 +303,6 @@ function QuestionRenderer({
           hint={question.hint}
         />
       )}
-      {question.tip && <Tip>{question.tip}</Tip>}
       {question.kind === "margin" && (
         <div className="rounded-2xl border border-green-200 bg-[var(--green-soft)] p-4 text-sm font-bold leading-6 text-[var(--green-deep)]">
           ✅ Na próxima tela você confere tudo antes de ver o preço.
