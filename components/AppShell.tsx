@@ -7,6 +7,15 @@ import {
 import Link from "next/link";
 import { MakerTicker } from "@/components/MakerTicker";
 
+const footerLinks = [
+  { href: "/sobre", label: "Sobre" },
+  { href: "/como-funciona", label: "Como funciona" },
+  { href: "/faq", label: "Perguntas frequentes" },
+  { href: "/contato", label: "Contato" },
+  { href: "/privacidade", label: "Política de Privacidade" },
+  { href: "/termos", label: "Termos de Uso" },
+];
+
 export function AppShell({
   children,
   compact = false,
@@ -32,18 +41,30 @@ export function AppShell({
             <span className="sm:hidden">Histórico</span>
           </Link>
         </header>
+
         {children}
-        <div className="mt-12">
+
+        <div className="mt-10">
           <MakerTicker />
         </div>
-        <footer className="mt-5 space-y-1.5 pb-3 text-center text-xs font-bold text-[var(--muted)]">
-          <div>🫶 Bota Preço · feito para quem cria com as próprias mãos</div>
-          <div className="opacity-80">Versão: {APP_VERSION}</div>
-          <div className="opacity-70">
-            Atualizado: {BUILD_DATE} {BUILD_TIME}
-          </div>
-          <div className="mx-auto max-w-md opacity-70">
-            Última alteração: {BUILD_SUMMARY}
+
+        <footer className="site-footer">
+          <nav className="footer-nav" aria-label="Rodapé">
+            {footerLinks.map((link) => (
+              <Link key={link.href} href={link.href} className="footer-link">
+                {link.label}
+              </Link>
+            ))}
+          </nav>
+          <div className="footer-meta">
+            <div>🫶 Bota Preço · feito para quem cria com as próprias mãos</div>
+            <div className="opacity-80">Versão: {APP_VERSION}</div>
+            <div className="opacity-70">
+              Atualizado: {BUILD_DATE} {BUILD_TIME}
+            </div>
+            <div className="mx-auto max-w-md opacity-70">
+              Última alteração: {BUILD_SUMMARY}
+            </div>
           </div>
         </footer>
       </div>
