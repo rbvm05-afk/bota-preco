@@ -1,10 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { calculatePrice } from "@/lib/calculator";
+import { calculatePrice } from "@/src/domain/pricing";
 import { saveCalculation } from "@/lib/storage";
 import { resolveProfile } from "@/engine/profiles";
+import { getInputDefaults } from "@/src/domain/products";
 import type { WizardQuestion } from "@/engine/types";
 import type { MaterialItem, PricingInput } from "@/types/pricing";
 import { AppShell } from "./AppShell";
@@ -31,9 +32,30 @@ export function PricingWizard({ mode }: { mode: "rapidin" | "completao" }) {
   });
 
   const profile = useMemo(() => resolveProfile(input.productName), [input.productName]);
+
+  // Setup automático quando a família de produto (blueprint) muda
+  useEffect(() => {
+    if (!input.productName.trim()) return;
+    const defaults = getInputDefaults(input.productName);
+    setInput((current) => ({
+      ...current,
+      yieldAmount: defaults.yieldAmount,
+      wastePercent: defaults.wastePercent,
+      workHours: defaults.workHours,
+      hourlyRate: defaults.hourlyRate,
+      desiredMargin: defaults.desiredMargin,
+    }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- dispara ao mudar o blueprint (profile.id)
+  }, [profile.id]);
+
   const questions = profile.questions;
   const currentQuestion = questions[step - 1];
   const totalSteps = questions.length;
+
+  // Se o blueprint remove etapas, não deixar o step inválido
+  useEffect(() => {
+    if (step > totalSteps) setStep(totalSteps);
+  }, [totalSteps, step]);
 
   const update = <K extends keyof PricingInput>(field: K, value: PricingInput[K]) => setInput((current) => ({ ...current, [field]: value }));
   const next = () => step < totalSteps && setStep((current) => current + 1);
@@ -73,15 +95,16 @@ export function PricingWizard({ mode }: { mode: "rapidin" | "completao" }) {
 }
 
 function QuestionRenderer({ question, input, profile, update }: { question: WizardQuestion; input: PricingInput; profile: ReturnType<typeof resolveProfile>; update: <K extends keyof PricingInput>(field: K, value: PricingInput[K]) => void }) {
+  if (!question) return null;
   const product = input.productName || "seu produto";
   const title = question.title.replace("{produto}", product);
   const text = question.text.replace("{produto}", product);
   return (
     <QuestionBlock eyebrow={question.eyebrow} title={title} text={text}>
       {question.kind === "product" && <ProductNameInput value={input.productName} onChange={(value) => update("productName", value)} />}
-      {question.kind === "materials" && <>
+      {question.kind === "materials" && (
         <MaterialEditor items={input.materials} onChange={(materials) => update("materials", materials)} materialLabel={profile.materialLabel} placeholder={profile.materialPlaceholder} suggestedMaterials={profile.suggestedMaterials} />
-      </>}
+      )}
       {question.kind === "packaging" && <PackagingEditor items={input.packagingItems ?? []} onChange={(packagingItems) => update("packagingItems", packagingItems)} suggestedPackaging={profile.suggestedPackaging} yieldAmount={input.yieldAmount} />}
       {(question.kind === "number" || question.kind === "margin") && <Field label={question.inputLabel ?? question.label} type="number" min={question.min} max={question.max} step={question.step} value={Number(input[question.field])} onChange={(event) => update(question.field, Number(event.target.value) as never)} hint={question.hint} />}
       {question.tip && <Tip>{question.tip}</Tip>}
