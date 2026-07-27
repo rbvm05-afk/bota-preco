@@ -44,12 +44,7 @@ export function LiveSummary({
 
   return (
     <div className={`live-summary ${open ? "live-summary-open" : ""}`}>
-      <button
-        type="button"
-        className="live-summary-toggle"
-        onClick={() => setOpen((value) => !value)}
-        aria-expanded={open}
-      >
+      <button type="button" className="live-summary-toggle" onClick={() => setOpen((value) => !value)} aria-expanded={open}>
         <span className="flex items-center gap-2">
           <span aria-hidden="true">🧾</span>
           <strong>Sua conta até agora</strong>
@@ -72,9 +67,7 @@ export function LiveSummary({
 function SummaryRow({ icon, label, value }: { icon: string; label: string; value: number }) {
   return (
     <div className="live-summary-row">
-      <span>
-        {icon} {label}
-      </span>
+      <span>{icon} {label}</span>
       <strong>{money(value)}</strong>
     </div>
   );
