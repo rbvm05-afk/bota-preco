@@ -1,6 +1,6 @@
 {
   "name": "bota-preco",
-  "version": "1.9.2-a",
+  "version": "1.9.3",
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
