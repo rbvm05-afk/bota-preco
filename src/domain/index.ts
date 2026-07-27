@@ -1,6 +1,7 @@
 /**
  * Domain Layer 2.0 — fachada pública.
  * Produtos: src/domain/products (fonte única).
+ * Pricing: src/domain/pricing (único ponto de cálculo).
  * Materiais/unidades: ainda em src/knowledge (próximos épicos).
  */
 
@@ -37,3 +38,10 @@ export { getPackagingSuggestion, packagingNames } from "@/src/knowledge/packagin
 export type { PackagingSuggestion } from "@/src/knowledge/packaging";
 
 export type { ProductProfile, WizardQuestion, WizardField, QuestionKind } from "@/engine/types";
+
+export {
+  calculatePrice,
+  packagingBatchCost,
+  packagingRequiredUnits,
+  money,
+} from "./pricing";
