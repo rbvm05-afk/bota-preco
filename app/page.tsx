@@ -1,74 +1,62 @@
 import Link from "next/link";
 import { AppShell } from "@/components/AppShell";
 import { texts } from "@/data/texts";
+import { HomeFeatureCards } from "@/components/HomeFeatureCards";
+import { AdSlot } from "@/components/AdSlot";
 
 export default function Home() {
   return (
     <AppShell>
-      <section className="grid items-center gap-10 py-8 lg:grid-cols-[1.12fr_0.88fr] lg:py-20">
-        <div>
-          <span className="inline-flex rounded-full bg-[var(--green-soft)] px-4 py-2 text-sm font-black text-[var(--green)]">
-            {texts.home.eyebrow}
-          </span>
-
-          <h1 className="mt-6 max-w-3xl text-5xl font-black leading-[0.98] tracking-[-0.055em] sm:text-7xl">
-            {texts.home.title}
-          </h1>
-
-          <p className="mt-6 max-w-2xl text-lg leading-8 text-[var(--muted)] sm:text-xl">
-            {texts.home.description}
-          </p>
-
-          <div className="mt-9 grid max-w-2xl gap-4 sm:grid-cols-2">
-            <Link
-              href="/rapidin"
-              className="rounded-3xl bg-[var(--green)] p-5 text-white shadow-sm transition hover:-translate-y-1 hover:bg-[var(--green-dark)]"
-            >
-              <strong className="block text-xl">{texts.home.rapidin}</strong>
-              <span className="mt-2 block text-sm leading-6 text-white/80">
-                {texts.home.rapidinHelp}
-              </span>
-            </Link>
-
-            <Link
-              href="/completin"
-              className="rounded-3xl border-2 border-[var(--green)] bg-white p-5 text-[var(--green)] transition hover:-translate-y-1 hover:bg-[var(--green-soft)]"
-            >
-              <strong className="block text-xl">{texts.home.completin}</strong>
-              <span className="mt-2 block text-sm leading-6 text-[var(--muted)]">
-                {texts.home.completinHelp}
-              </span>
-            </Link>
-          </div>
+      <section className="home-hero animate-rise">
+        <div className="home-copy">
+          <span className="eyebrow-pill"><span aria-hidden="true">🫶</span>{texts.home.eyebrow}</span>
+          <h1>{texts.home.title}</h1>
+          <p>{texts.home.description}</p>
         </div>
 
-        <div className="relative">
-          <div className="rotate-2 rounded-[2.5rem] border border-[var(--border)] bg-white p-6 shadow-xl shadow-green-900/10 sm:p-8">
-            <p className="font-black text-[var(--green)]">Uma conta completa olha para:</p>
+        <div className="flow-grid" aria-label="Escolha como quer calcular">
+          <Link href="/rapidin" className="flow-card flow-card-primary group">
+            <div className="flow-card-top"><span className="flow-emoji" aria-hidden="true">⚡</span><span className="flow-arrow" aria-hidden="true">→</span></div>
+            <span className="flow-kicker">Mais rápido</span>
+            <strong>{texts.home.rapidin}</strong>
+            <span className="flow-help">{texts.home.rapidinHelp}</span>
+            <span className="flow-cta">Bora calcular</span>
+          </Link>
 
-            <div className="mt-6 space-y-3">
-              {[
-                ["01", "Ingredientes e materiais"],
-                ["02", "Tempo para fazer"],
-                ["03", "Embalagem"],
-                ["04", "Outros gastos"],
-                ["05", "Margem"],
-              ].map(([number, label]) => (
-                <div key={number} className="flex items-center gap-4 rounded-2xl bg-[#f7f5ef] p-4">
-                  <span className="grid size-10 place-items-center rounded-xl bg-[var(--green-soft)] text-sm font-black text-[var(--green)]">
-                    {number}
-                  </span>
-                  <strong>{label}</strong>
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-6 rounded-2xl bg-[#fff1c7] p-4 text-sm leading-6">
-              <strong className="block">A ideia não é cobrar mais.</strong>
-              É cobrar sabendo de onde o preço saiu.
-            </div>
-          </div>
+          <Link href="/completao" className="flow-card flow-card-secondary group">
+            <div className="flow-card-top"><span className="flow-emoji" aria-hidden="true">🎯</span><span className="flow-arrow" aria-hidden="true">→</span></div>
+            <span className="flow-kicker">Mais detalhado</span>
+            <strong>{texts.home.completao}</strong>
+            <span className="flow-help">{texts.home.completaoHelp}</span>
+            <span className="flow-cta">Quero um preço mais preciso</span>
+            <span className="flow-free-note">Grátis até o resultado final. Só leva alguns minutos a mais.</span>
+          </Link>
         </div>
+
+        <p className="home-proof"><span aria-hidden="true">✅</span> Sem cadastro para começar. Sem planilha. Sem falar difícil.</p>
+      </section>
+
+      <AdSlot placement="home-after-flows" className="mt-7" />
+
+      <section className="home-support-grid">
+        <div className="surface pain-panel">
+          <p className="section-kicker">O preço não pode ser mais um peso</p>
+          <h2>O Bota ajuda a enxergar o que o chute esconde.</h2>
+          <p className="section-copy">Toque ou passe o mouse nos cards para ver onde a conta costuma escapar e como a gente resolve isso junto.</p>
+          <div className="mt-6"><HomeFeatureCards /></div>
+        </div>
+
+        <aside className="maker-note" aria-label="Para quem é o Bota Preço">
+          <div className="maker-doodles" aria-hidden="true"><span>🧁</span><span>🧶</span><span>🕯️</span></div>
+          <p className="section-kicker">Tem cara de trabalho feito em casa</p>
+          <h2>Do primeiro pedido à renda que começa a crescer.</h2>
+          <p>Para quem vende comida, costura, artesanato, presentes, beleza ou qualquer coisa feita com cuidado.</p>
+          <div className="maker-benefits">
+            <span>💬 Perguntas simples</span>
+            <span>🧾 Conta explicada</span>
+            <span>🌱 Espaço para crescer</span>
+          </div>
+        </aside>
       </section>
     </AppShell>
   );
