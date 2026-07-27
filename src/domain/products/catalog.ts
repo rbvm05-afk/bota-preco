@@ -1,0 +1,126 @@
+import type { DomainProduct, DomainProfileTemplate, ProductSuggestion } from "./types";
+
+/** Catálogo único de produtos (autocomplete + vínculo de família). */
+export const productCatalog: DomainProduct[] = [
+  { id: "PROD001", name: "Brigadeiro", category: "Doces", aliases: ["brigadeiro tradicional", "docinho"], kind: "base", profileFamily: "brigadeiro" },
+  { id: "PROD016", name: "Brigadeiro gourmet", category: "Doces", aliases: ["brigadeiro premium"], kind: "format", profileFamily: "brigadeiro" },
+  { id: "PROD017", name: "Brigadeiro de colher", category: "Doces", aliases: ["brigadeiro na colher"], kind: "format", profileFamily: "brigadeiro" },
+  { id: "PROD018", name: "Brigadeiro de pote", category: "Doces", aliases: ["brigadeiro no pote"], kind: "format", profileFamily: "brigadeiro" },
+  { id: "PROD019", name: "Brigadeiro de pistache", category: "Doces", aliases: ["brigadeiro pistache"], kind: "flavor", profileFamily: "brigadeiro" },
+  { id: "PROD020", name: "Brigadeiro de paçoca", category: "Doces", aliases: ["brigadeiro pacoca"], kind: "flavor", profileFamily: "brigadeiro" },
+  { id: "PROD021", name: "Brigadeiro de leite Ninho", category: "Doces", aliases: ["brigadeiro ninho"], kind: "flavor", profileFamily: "brigadeiro" },
+  { id: "PROD002", name: "Bolo de pote", category: "Doces", aliases: ["bolo no pote"], kind: "base", profileFamily: "bolo" },
+  { id: "PROD022", name: "Bolo caseiro", category: "Doces", aliases: ["bolo simples"], kind: "base", profileFamily: "bolo" },
+  { id: "PROD023", name: "Bolo de chocolate", category: "Doces", aliases: [], kind: "flavor", profileFamily: "bolo" },
+  { id: "PROD003", name: "Brownie", category: "Doces", aliases: ["brownies"], kind: "base", profileFamily: "doces" },
+  { id: "PROD004", name: "Trufa", category: "Doces", aliases: ["trufa de chocolate"], kind: "base", profileFamily: "doces" },
+  { id: "PROD005", name: "Marmita", category: "Comida", aliases: ["marmitex", "quentinha"], kind: "base", profileFamily: "marmita" },
+  { id: "PROD006", name: "Marmita fit", category: "Comida", aliases: ["marmita saudável", "marmita fitness"], kind: "format", profileFamily: "marmita" },
+  { id: "PROD024", name: "Marmita congelada", category: "Comida", aliases: [], kind: "format", profileFamily: "marmita" },
+  { id: "PROD025", name: "Marmita low carb", category: "Comida", aliases: [], kind: "format", profileFamily: "marmita" },
+  { id: "PROD007", name: "Salgado", category: "Comida", aliases: ["salgadinho", "salgados"], kind: "base", profileFamily: "refeicoes" },
+  { id: "PROD008", name: "Coxinha", category: "Comida", aliases: ["coxinhas"], kind: "base", profileFamily: "refeicoes" },
+  { id: "PROD009", name: "Vela", category: "Artesanato", aliases: ["velas"], kind: "base", profileFamily: "vela" },
+  { id: "PROD010", name: "Vela aromática", category: "Artesanato", aliases: ["vela perfumada", "vela cheirosa"], kind: "format", profileFamily: "vela" },
+  { id: "PROD011", name: "Vela de pote", category: "Artesanato", aliases: ["vela no pote"], kind: "format", profileFamily: "vela" },
+  { id: "PROD026", name: "Vela de citronela", category: "Artesanato", aliases: [], kind: "flavor", profileFamily: "vela" },
+  { id: "PROD012", name: "Sabonete artesanal", category: "Artesanato", aliases: ["sabonete caseiro"], kind: "base", profileFamily: "generico" },
+  { id: "PROD013", name: "Peça de crochê", category: "Artesanato", aliases: ["croche", "crochê"], kind: "base", profileFamily: "generico" },
+  { id: "PROD014", name: "Amigurumi", category: "Artesanato", aliases: ["boneco de crochê", "boneco de croche"], kind: "base", profileFamily: "generico" },
+  { id: "PROD015", name: "Sabão artesanal", category: "Artesanato", aliases: ["sabão caseiro", "sabao artesanal"], kind: "base", profileFamily: "generico" },
+];
+
+/** Templates de perfil (kits e labels do wizard). */
+export const profileTemplates: DomainProfileTemplate[] = [
+  {
+    id: "brigadeiro",
+    category: "Doces",
+    displayName: "Brigadeiro",
+    matches: ["brigadeiro"],
+    materialLabel: "ingrediente",
+    materialExamples: ["leite condensado", "chocolate", "manteiga", "granulado"],
+    suggestedMaterials: ["Leite condensado", "Chocolate 50%", "Manteiga", "Granulado"],
+    suggestedPackaging: ["Forminha de papel", "Caixa para doces", "Etiqueta adesiva", "Sacola"],
+    materialPlaceholder: "Ex.: leite condensado",
+    defaultYield: 50,
+  },
+  {
+    id: "bolo",
+    category: "Doces",
+    displayName: "Bolo",
+    matches: ["bolo de pote", "bolo"],
+    materialLabel: "ingrediente",
+    materialExamples: ["farinha", "açúcar", "ovos", "recheio"],
+    suggestedMaterials: ["Farinha de trigo", "Açúcar", "Ovos", "Leite"],
+    suggestedPackaging: ["Pote", "Tampa", "Colher", "Etiqueta adesiva", "Sacola"],
+    materialPlaceholder: "Ex.: farinha de trigo",
+    defaultYield: 12,
+  },
+  {
+    id: "vela",
+    category: "Artesanato",
+    displayName: "Vela",
+    matches: ["vela aromática", "vela de pote", "vela", "candle"],
+    materialLabel: "material",
+    materialExamples: ["cera", "pavio", "essência", "recipiente"],
+    suggestedMaterials: ["Cera de soja", "Essência aromática", "Pavio de algodão", "Pote de vidro"],
+    suggestedPackaging: ["Tampa", "Etiqueta adesiva", "Caixa de papelão", "Sacola"],
+    materialPlaceholder: "Ex.: cera de soja",
+    defaultYield: 6,
+  },
+  {
+    id: "marmita",
+    category: "Comida",
+    displayName: "Marmita",
+    matches: ["marmita fitness", "marmita", "marmitex", "quentinha"],
+    materialLabel: "ingrediente",
+    materialExamples: ["proteína", "arroz", "legumes", "temperos"],
+    suggestedMaterials: ["Arroz", "Proteína", "Legumes", "Temperos"],
+    suggestedPackaging: ["Marmita", "Tampa", "Etiqueta adesiva", "Sacola"],
+    materialPlaceholder: "Ex.: arroz",
+    defaultYield: 10,
+  },
+  {
+    id: "doces",
+    category: "Doces",
+    matches: ["trufa", "doce", "brownie", "cookie"],
+    materialLabel: "ingrediente",
+    materialExamples: ["ingredientes principais", "recheio", "cobertura"],
+    suggestedMaterials: [],
+    suggestedPackaging: [],
+    materialPlaceholder: "Ex.: chocolate",
+  },
+  {
+    id: "refeicoes",
+    category: "Comida",
+    matches: ["salgado", "lasanha", "comida", "congelado"],
+    materialLabel: "ingrediente",
+    materialExamples: ["proteína", "acompanhamentos", "temperos"],
+    suggestedMaterials: [],
+    suggestedPackaging: [],
+    materialPlaceholder: "Ex.: arroz",
+  },
+  {
+    id: "generico",
+    category: "Geral",
+    matches: [],
+    materialLabel: "material",
+    materialExamples: [],
+    suggestedMaterials: [],
+    suggestedPackaging: [],
+    materialPlaceholder: "Ex.: matéria-prima",
+  },
+];
+
+export function toProductSuggestion(product: DomainProduct): ProductSuggestion {
+  return {
+    id: product.id,
+    name: product.name,
+    group: product.category,
+    aliases: product.aliases,
+    kind: product.kind,
+  };
+}
+
+/** Lista no formato legado do autocomplete. */
+export const productSuggestions: ProductSuggestion[] = productCatalog.map(toProductSuggestion);
