@@ -12,7 +12,6 @@ export default function Home() {
             {texts.home.eyebrow}
           </span>
           <h1>{texts.home.title}</h1>
-          <p>{texts.home.description}</p>
         </div>
 
         <div className="flow-grid" aria-label="Escolha como quer calcular">
@@ -56,6 +55,8 @@ export default function Home() {
           <span aria-hidden="true">✅</span>
           Sem cadastro, sem planilha, sem complicação.
         </p>
+
+        <p className="home-value">{texts.home.description}</p>
       </section>
     </AppShell>
   );
