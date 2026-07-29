@@ -1,7 +1,17 @@
 import type { PricingInput } from "@/types/pricing";
 
 export type WizardField = keyof PricingInput;
-export type QuestionKind = "product" | "materials" | "packaging" | "number" | "margin";
+export type QuestionKind =
+  | "product"
+  | "materials"
+  | "packaging"
+  | "number"
+  | "margin"
+  | "yield-time"
+  | "extras-list"
+  | "waste-pair"
+  | "fees-gate"
+  | "competition";
 
 export type WizardQuestion = {
   id: string;

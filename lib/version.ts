@@ -1,14 +1,14 @@
 export const APP_NAME = "Bota Preço";
 
-/** 2.5.2.a — Rapidin como assistente (contexto do domínio) */
-export const APP_VERSION = "2.5.2.a";
+/** 2.6.0 — Refinamento completo do Rapidin (usabilidade) */
+export const APP_VERSION = "2.6.0";
 
-export const APP_STAGE = "Smart Pricing";
+export const APP_STAGE = "Rapidin UX";
 
-export const BUILD_DATE = "28/07/2026";
-export const BUILD_TIME = "02:58";
+export const BUILD_DATE = "29/07/2026";
+export const BUILD_TIME = "15:15";
 export const BUILD_SUMMARY =
-  "Rapidin assistente — contexto do domínio, sem preencher vazio";
+  "Rapidin 2.6 — etapas unidas, perdas simples, sinaleiro no resultado";
 
 export const APP_TITLE = `${APP_NAME} ${APP_VERSION}`;
 export const APP_FULL_NAME = `${APP_TITLE} · ${APP_STAGE}`;
