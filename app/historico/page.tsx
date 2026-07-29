@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { money } from "@/src/domain/pricing";
-import { stashForCompletao } from "@/lib/continuity";
 import {
   clearCalculations,
   getCalculations,
@@ -34,12 +33,6 @@ export default function HistoricoPage() {
     setItems([]);
   };
 
-  const continueToCompletao = (item: SavedCalculation) => {
-    const resolved = resolveCalculation(item);
-    stashForCompletao(item.input, item.id, resolved.result.healthyPrice);
-    window.location.href = "/completao";
-  };
-
   return (
     <AppShell compact>
       <div className="animate-rise">
@@ -50,7 +43,7 @@ export default function HistoricoPage() {
             </p>
             <h1 className="mt-2 text-4xl font-black tracking-[-.04em]">Meus cálculos</h1>
             <p className="mt-2 text-[var(--muted)]">
-              Rapidin e Completão ficam separados — cada um no seu lugar.
+              Seus Rapidins ficam guardados aqui no aparelho.
             </p>
           </div>
           {items.length > 0 ? (
@@ -72,23 +65,34 @@ export default function HistoricoPage() {
           </TabButton>
         </div>
 
-        {visible.length === 0 ? (
+        {tab === "completao" && completao.length === 0 ? (
           <div className="surface rounded-[2rem] p-9 text-center">
-            <span className="mx-auto grid size-14 place-items-center rounded-2xl bg-[var(--green-soft)] text-2xl">
-              {tab === "rapidin" ? "🥾" : "📋"}
+            <span className="mx-auto grid size-14 place-items-center rounded-2xl bg-[#f7f4ee] text-2xl">
+              🚧
             </span>
-            <h2 className="mt-5 text-2xl font-black">
-              {tab === "rapidin"
-                ? "Nenhum Rapidin guardado ainda."
-                : "Nenhum Completão guardado ainda."}
-            </h2>
+            <h2 className="mt-5 text-2xl font-black">Completão em desenvolvimento</h2>
             <p className="mt-3 text-[var(--muted)]">
-              {tab === "rapidin"
-                ? "Quando você terminar um cálculo rápido, ele aparece aqui."
-                : "Diagnósticos completos ficam nesta lista."}
+              Quando lançarmos, seus diagnósticos completos aparecerão aqui. Por enquanto, use o
+              Rapidin.
             </p>
             <Link
-              href={tab === "rapidin" ? "/rapidin" : "/completao"}
+              href="/rapidin"
+              className="mt-6 inline-block rounded-2xl bg-[var(--green)] px-6 py-4 font-black text-white"
+            >
+              ⚡ Ir para o Rapidin
+            </Link>
+          </div>
+        ) : visible.length === 0 ? (
+          <div className="surface rounded-[2rem] p-9 text-center">
+            <span className="mx-auto grid size-14 place-items-center rounded-2xl bg-[var(--green-soft)] text-2xl">
+              🥾
+            </span>
+            <h2 className="mt-5 text-2xl font-black">Nenhum Rapidin guardado ainda.</h2>
+            <p className="mt-3 text-[var(--muted)]">
+              Quando você terminar um cálculo, ele aparece aqui.
+            </p>
+            <Link
+              href="/rapidin"
               className="mt-6 inline-block rounded-2xl bg-[var(--green)] px-6 py-4 font-black text-white"
             >
               Começar →
@@ -106,23 +110,12 @@ export default function HistoricoPage() {
                   <div className="flex items-start justify-between gap-4">
                     <div>
                       <span className="rounded-full bg-[var(--green-soft)] px-3 py-1 text-[10px] font-black uppercase tracking-[.14em] text-[var(--green)]">
-                        {item.mode === "rapidin" || item.mode === "completin"
-                          ? "Rapidin"
-                          : "Completão"}
+                        {item.mode === "completao" ? "Completão" : "Rapidin"}
                       </span>
                       <h2 className="mt-3 text-xl font-black">{item.input.productName}</h2>
                       <p className="mt-1 text-sm text-[var(--muted)]">
                         {new Date(item.createdAt).toLocaleString("pt-BR")}
                       </p>
-                      {(item.mode === "rapidin" || item.mode === "completin") && (
-                        <button
-                          type="button"
-                          onClick={() => continueToCompletao(item)}
-                          className="mt-3 text-sm font-black text-[var(--green)] underline"
-                        >
-                          Continuar no Completão →
-                        </button>
-                      )}
                     </div>
                     <div className="rounded-2xl bg-[var(--green-deep)] px-4 py-3 text-right text-white">
                       <span className="block text-xs text-white/65">Recomendado</span>

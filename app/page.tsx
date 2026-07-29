@@ -27,7 +27,7 @@ export default function Home() {
                 <span className="flow-emoji" aria-hidden="true">
                   ⚡
                 </span>
-                <span className="flow-kicker">Mais rápido</span>
+                <span className="flow-kicker">Disponível agora</span>
               </span>
               <span className="flow-arrow" aria-hidden="true">
                 →
@@ -38,25 +38,38 @@ export default function Home() {
             <span className="flow-cta">Bora calcular</span>
           </Link>
 
-          <Link href="/completao" className="flow-card flow-card-secondary group">
+          {/* Completão congelado — arquitetura preservada, sem acesso ativo */}
+          <div
+            className="flow-card flow-card-secondary opacity-90"
+            aria-disabled="true"
+            role="group"
+            aria-label="Completão em desenvolvimento"
+          >
             <div className="flow-card-top">
               <span className="flow-title-row">
                 <span className="flow-emoji" aria-hidden="true">
-                  🎯
+                  📋
                 </span>
-                <span className="flow-kicker">Mais detalhado</span>
-              </span>
-              <span className="flow-arrow" aria-hidden="true">
-                →
+                <span className="flow-kicker">🚧 Em desenvolvimento</span>
               </span>
             </div>
-            <strong>{texts.home.completao}</strong>
-            <span className="flow-help">{texts.home.completaoHelp}</span>
-            <span className="flow-cta">Quero um preço mais preciso</span>
-            <span className="flow-free-note">
-              Grátis até o resultado final. Só leva alguns minutos a mais.
+            <strong>Completão</strong>
+            <span className="flow-help">
+              Estamos criando uma versão muito mais completa do Bota Preço. Ela fará uma análise
+              detalhada do seu negócio, encontrará oportunidades de melhoria e entregará um
+              diagnóstico personalizado.
             </span>
-          </Link>
+            <span className="flow-help mt-2 block">
+              Queremos lançar essa experiência apenas quando ela realmente estiver pronta. Enquanto
+              isso, o Rapidin continua evoluindo e já está disponível gratuitamente.
+            </span>
+            <span
+              className="flow-cta mt-3 inline-block cursor-default rounded-2xl border border-[var(--border)] bg-[#f7f4ee] px-4 py-2 text-sm font-black text-[var(--muted)]"
+              aria-hidden="true"
+            >
+              Em breve
+            </span>
+          </div>
         </div>
 
         <p className="home-value">{texts.home.tagline}</p>
