@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { AdSlot } from "@/components/AdSlot";
+import { ContinuityInvite } from "@/components/ContinuityInvite";
 import { PriceSimulator } from "@/components/PriceSimulator";
 import { calculatePrice, money } from "@/src/domain/pricing";
 import { buildSmartPricingReport } from "@/src/domain/insights";
@@ -52,7 +53,7 @@ export default function ResultadoPage() {
     );
   }
 
-  const { input, result } = current;
+  const { input, result, mode, id } = current;
   const { explanation, diagnosis, confidence, insights } = report;
   const fee =
     input.hasSalesFee === false ? 0 : (input.salesFeePercent ?? 0) / 100;
@@ -60,6 +61,7 @@ export default function ResultadoPage() {
   const hours = Math.max(0.01, input.workHours || 0.01);
   const units = Math.max(1, result.sellableUnits || input.yieldAmount || 1);
   const profitPerHour = (profitPerUnit * units) / hours;
+  const isRapidin = mode === "rapidin";
 
   const signalTone: "red" | "yellow" | "green" =
     diagnosis.tone === "red" || diagnosis.tone === "orange"
@@ -96,7 +98,6 @@ export default function ResultadoPage() {
   return (
     <AppShell compact>
       <section className="animate-rise space-y-5">
-        {/* Hero — preço recomendado (verde) é SEMPRE o destaque principal */}
         <div className="relative overflow-hidden rounded-[2.3rem] bg-[var(--green-deep)] p-7 text-white shadow-2xl shadow-green-950/20 sm:p-10">
           <div className="absolute -right-12 -top-16 size-48 rounded-full border-[28px] border-white/5" />
           <div className="flex flex-wrap items-center gap-2">
@@ -136,7 +137,6 @@ export default function ResultadoPage() {
           )}
         </div>
 
-        {/* Três níveis apenas — verde com maior destaque visual */}
         <div className="grid gap-3 sm:grid-cols-3">
           <SignalCard
             emoji="🔴"
@@ -218,27 +218,27 @@ export default function ResultadoPage() {
             <dl className="mt-6 space-y-4 border-t border-[var(--border)] pt-6">
               <ExplainItem
                 term="🔴 Prejuízo"
-                def={`Qualquer preço abaixo de ${money(result.costPerUnit)} não cobre o que você gastou para produzir. Nunca venda aqui.`} 
+                def={`Qualquer preço abaixo de ${money(result.costPerUnit)} não cobre o que você gastou para produzir. Nunca venda aqui.`}
               />
               <ExplainItem
                 term="🟡 Preço mínimo"
-                def={`Por volta de ${money(result.minimumPrice)}: cobre o custo com uma folga pequena. Serve só como limite inferior.`} 
+                def={`Por volta de ${money(result.minimumPrice)}: cobre o custo com uma folga pequena. Serve só como limite inferior.`}
               />
               <ExplainItem
                 term="🟢 Preço recomendado"
-                def={`O Bota sugere ${money(result.healthyPrice)} — cobre custos, seu tempo e deixa margem para continuar. Este é o valor principal.`} 
+                def={`O Bota sugere ${money(result.healthyPrice)} — cobre custos, seu tempo e deixa margem para continuar. Este é o valor principal.`}
               />
               <ExplainItem
                 term="Margem maior (oportunidade)"
-                def={`Se o mercado pagar mais (produto premium, marca forte), valores acima de ${money(result.premiumPrice)} aumentam o lucro sem mudar o custo.`} 
+                def={`Se o mercado pagar mais (produto premium, marca forte), valores acima de ${money(result.premiumPrice)} aumentam o lucro sem mudar o custo.`}
               />
               <ExplainItem
                 term="Lucro"
-                def={`O que sobra depois de pagar tudo (materiais, tempo, embalagem, taxas). Não é o valor que entra no caixa.`} 
+                def="O que sobra depois de pagar tudo (materiais, tempo, embalagem, taxas). Não é o valor que entra no caixa."
               />
               <ExplainItem
                 term="Custo por unidade"
-                def={`${money(result.costPerUnit)} — quanto cada unidade custou para ficar pronta para vender.`} 
+                def={`${money(result.costPerUnit)} — quanto cada unidade custou para ficar pronta para vender.`}
               />
               <ExplainItem
                 term="Lucro vs faturamento"
@@ -305,6 +305,9 @@ export default function ResultadoPage() {
             <Row label="Custo por unidade" value={result.costPerUnit} strong />
           </div>
         </div>
+
+        {/* Continuidade Rapidin → Completão */}
+        {isRapidin && <ContinuityInvite input={input} parentId={id} />}
 
         <AdSlot placement="result-after-breakdown" />
 

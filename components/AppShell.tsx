@@ -15,6 +15,7 @@ const footerLinks = [
   { href: "/contato", label: "Contato" },
   { href: "/privacidade", label: "Política de Privacidade" },
   { href: "/termos", label: "Termos de Uso" },
+  { href: "/cookies", label: "Cookies" },
 ];
 
 export function AppShell({
