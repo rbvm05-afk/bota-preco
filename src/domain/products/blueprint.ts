@@ -255,14 +255,20 @@ export function getCategory(productName: string): string {
   return getBlueprint(productName).category;
 }
 
+/**
+ * Ordem 2.6.0:
+ * Produto → Ingredientes → Rendimento+Tempo → Embalagens →
+ * Outros gastos + Hora → Perdas → Taxas → Concorrência → (Revisão)
+ */
 export function getQuestions(productName: string): WizardQuestion[] {
   const bp = getBlueprint(productName);
+  const unit = bp.unitLabel;
   const questions: WizardQuestion[] = [
     {
       id: "product",
       field: "productName",
       kind: "product",
-      label: "Seu produto",
+      label: "Produto",
       eyebrow: "👋 Bora começar",
       title: "O que você está colocando preço?",
       text: "Depois disso, a conversa fica com a cara do seu produto.",
@@ -274,53 +280,22 @@ export function getQuestions(productName: string): WizardQuestion[] {
       id: "materials",
       field: "materials",
       kind: "materials",
-      label: "Materiais",
-      eyebrow: "📦 Agora entra o que você usou",
-      title: `Quais ${bp.materialLabel}s fazem parte de {produto}?`,
-      text: "Coloque quanto pagou, quanto veio e quanto usou. O Bota faz a divisão.",
+      label: "Ingredientes",
+      eyebrow: "📦 O que você usou",
+      title: `Quais ${bp.materialLabel}s entram em {produto}?`,
+      text: "Coloque quanto pagou, quanto veio na embalagem e quanto usou. Se souber a marca, melhor ainda.",
       tip: "Uma estimativa sincera já vale muito mais do que deixar algo esquecido.",
     });
   }
 
   questions.push({
-    id: "yield",
+    id: "yield-time",
     field: "yieldAmount",
-    kind: "number",
-    label: "Rendimento",
-    eyebrow: "✅ Pronto. Os materiais já estão na conta",
-    title: `Essa produção rende quantas ${bp.unitLabel}s?`,
-    text: "Agora a gente transforma o custo do lote em custo por unidade.",
-    inputLabel: `Quantidade (${bp.unitLabel})`,
-    min: 1,
-    step: 1,
-  });
-
-  questions.push({
-    id: "hours",
-    field: "workHours",
-    kind: "number",
-    label: "Tempo de produção",
-    eyebrow: "⏱️ Seu tempo não é grátis",
-    title: "Quantas horas você trabalhou nesse lote?",
-    text: "Conte o tempo em que você realmente trabalhou em {produto}.",
-    inputLabel: "Horas de trabalho",
-    min: 0,
-    step: 0.25,
-    hint: "Ex.: 1,5 hora = 1 hora e 30 minutos.",
-  });
-
-  questions.push({
-    id: "hourlyRate",
-    field: "hourlyRate",
-    kind: "number",
-    label: "Valor do seu trabalho",
-    eyebrow: "💪 Agora vamos valorizar seu trabalho",
-    title: "Quanto você quer receber por hora?",
-    text: "Não existe resposta perfeita. Comece com um valor que faça sentido para você.",
-    inputLabel: "Valor da sua hora",
-    min: 0,
-    step: 0.01,
-    hint: "O valor preenchido é só uma referência. Você manda na conta.",
+    kind: "yield-time",
+    label: "Rendimento e tempo",
+    eyebrow: "✅ Materiais na conta",
+    title: `Essa produção rende quantas ${unit}s — e quanto tempo levou?`,
+    text: "Informe o rendimento planejado e as horas em que você realmente trabalhou.",
   });
 
   if (bp.steps.packaging && bp.suggestedPackaging.length > 0) {
@@ -328,43 +303,45 @@ export function getQuestions(productName: string): WizardQuestion[] {
       id: "packaging",
       field: "packagingItems",
       kind: "packaging",
-      label: "Embalagem",
+      label: "Embalagens",
       eyebrow: "🛍️ Produto pronto também precisa sair bonito",
       title: "Qual kit de embalagem acompanha {produto}?",
-      text: "O Bota sugeriu um kit. Marque o que usa, informe os preços e a quantidade acompanha o rendimento automaticamente.",
+      text: "Marque o que usa e informe os preços. A quantidade acompanha o rendimento.",
     });
   }
 
   if (bp.steps.extras) {
     questions.push({
-      id: "extras",
-      field: "extraCosts",
-      kind: "number",
+      id: "extras-hora",
+      field: "extraCostItems",
+      kind: "extras-list",
       label: "Outros gastos",
-      eyebrow: "🧾 Vamos pegar os gastos escondidos",
-      title: "Teve algum outro custo nesse lote?",
-      text: "Energia, gás, entrega, ajuda, aluguel de equipamento ou qualquer gasto ligado à produção.",
-      inputLabel: "Outros gastos do lote",
-      min: 0,
-      step: 0.01,
-      tip: "Não teve nada? Pode deixar zero e seguir sem culpa.",
+      eyebrow: "🧾 Gastos escondidos + o valor do seu tempo",
+      title: "Teve outros custos? E quanto você quer receber por hora?",
+      text: "Gás, energia, entrega, etiqueta… e o valor da sua hora de trabalho.",
+      tip: "Não teve gasto extra? Pode deixar a lista vazia e seguir.",
+    });
+  } else {
+    questions.push({
+      id: "extras-hora",
+      field: "hourlyRate",
+      kind: "extras-list",
+      label: "Seu tempo",
+      eyebrow: "💪 Valorizar o seu trabalho",
+      title: "Quanto você quer receber por hora?",
+      text: "Não existe resposta perfeita. Comece com um valor que faça sentido para você.",
     });
   }
 
   if (bp.steps.waste) {
     questions.push({
       id: "waste",
-      field: "wastePercent",
-      kind: "number",
-      label: "Perdas e desperdícios",
+      field: "sellableUnits",
+      kind: "waste-pair",
+      label: "Perdas",
       eyebrow: "🧹 Nem tudo vira produto perfeito",
-      title: "Quanto costuma se perder no caminho?",
-      text: "Sobras, testes, quebra e pequenos erros também custam dinheiro.",
-      inputLabel: "Perdas estimadas (%)",
-      min: 0,
-      max: 50,
-      step: 1,
-      hint: "Entre 3% e 10% costuma ser uma primeira estimativa razoável.",
+      title: "Quantas unidades deveriam sair — e quantas ficaram prontas para vender?",
+      text: "O Bota calcula o desperdício sozinho. Você não precisa chutar porcentagem.",
     });
   }
 
@@ -372,31 +349,22 @@ export function getQuestions(productName: string): WizardQuestion[] {
     questions.push({
       id: "fees",
       field: "salesFeePercent",
-      kind: "number",
+      kind: "fees-gate",
       label: "Taxas de venda",
       eyebrow: "💳 Venda também pode ter taxa",
-      title: "Você paga alguma porcentagem para vender?",
-      text: "Cartão, marketplace, aplicativo ou comissão entram aqui.",
-      inputLabel: "Taxa sobre a venda (%)",
-      min: 0,
-      max: 40,
-      step: 0.1,
-      hint: "Venda direta e sem taxa? Deixe em zero.",
+      title: "Você paga alguma taxa quando vende?",
+      text: "Cartão, marketplace, aplicativo ou comissão. Se não pagar, é só dizer Não.",
     });
   }
 
   questions.push({
-    id: "margin",
-    field: "desiredMargin",
-    kind: "margin",
-    label: "Margem",
-    eyebrow: "💰 Chegamos na última pergunta",
-    title: "Qual margem você quer proteger na venda?",
-    text: "É o espaço para respirar, repor material e continuar crescendo.",
-    inputLabel: "Margem desejada (%)",
-    min: 0,
-    max: 89,
-    step: 1,
+    id: "competition",
+    field: "competitorPrice",
+    kind: "competition",
+    label: "Concorrência",
+    eyebrow: "👀 Só para comparar",
+    title: "Deseja informar o preço praticado pela concorrência apenas como referência?",
+    text: "Esse valor não altera o cálculo de custo. Serve só para você comparar depois.",
   });
 
   return questions;
