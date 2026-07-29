@@ -18,6 +18,7 @@ type CurrentSession = {
 
 export default function ResultadoPage() {
   const [current, setCurrent] = useState<(CurrentSession & { result: PricingResult }) | null>(null);
+  const [explainOpen, setExplainOpen] = useState(false);
 
   useEffect(() => {
     const raw = sessionStorage.getItem("bota-preco-current");
@@ -53,10 +54,37 @@ export default function ResultadoPage() {
 
   const { input, result } = current;
   const { explanation, diagnosis, confidence, insights } = report;
-  const fee = (input.salesFeePercent ?? 0) / 100;
+  const fee =
+    input.hasSalesFee === false ? 0 : (input.salesFeePercent ?? 0) / 100;
   const profitPerUnit = result.healthyPrice * (1 - fee) - result.costPerUnit;
   const hours = Math.max(0.01, input.workHours || 0.01);
-  const profitPerHour = (profitPerUnit * Math.max(1, input.yieldAmount)) / hours;
+  const units = Math.max(1, result.sellableUnits || input.yieldAmount || 1);
+  const profitPerHour = (profitPerUnit * units) / hours;
+
+  const signalTone: "red" | "yellow" | "green" =
+    diagnosis.tone === "red" || diagnosis.tone === "orange"
+      ? "red"
+      : diagnosis.tone === "yellow"
+        ? "yellow"
+        : "green";
+
+  const signalCopy = {
+    red: {
+      emoji: "🔴",
+      title: "Está perdendo dinheiro",
+      hint: "O preço atual (ou o mínimo) ainda não cobre o custo de verdade.",
+    },
+    yellow: {
+      emoji: "🟡",
+      title: "Está cobrindo os custos",
+      hint: "Cobre o básico, mas sobra pouco para crescer e respirar.",
+    },
+    green: {
+      emoji: "🟢",
+      title: "Preço saudável",
+      hint: "Cobre custos, valoriza seu tempo e deixa margem para seguir.",
+    },
+  }[signalTone];
 
   const confClass =
     confidence.level === "high"
@@ -65,26 +93,31 @@ export default function ResultadoPage() {
         ? "bg-[#fff8df] text-[#8a6a00]"
         : "bg-[#fff1ef] text-[var(--red)]";
 
-  const diagClass: Record<string, string> = {
-    green: "border-[#9bc7a8] bg-[#eaf5ed]",
-    yellow: "border-[#ecd28c] bg-[#fff8df]",
-    orange: "border-[#f0c9a0] bg-[#fff6eb]",
-    red: "border-[#efb6ad] bg-[#fff1ef]",
-  };
-
   return (
     <AppShell compact>
       <section className="animate-rise space-y-5">
+        {/* Sinaleiro */}
         <div className="relative overflow-hidden rounded-[2.3rem] bg-[var(--green-deep)] p-7 text-white shadow-2xl shadow-green-950/20 sm:p-10">
           <div className="absolute -right-12 -top-16 size-48 rounded-full border-[28px] border-white/5" />
           <div className="flex flex-wrap items-center gap-2">
             <span className="inline-flex rounded-full bg-white/10 px-3 py-1.5 text-xs font-black uppercase tracking-[.15em]">
-              ✅ Preço recomendado
+              Seu preço
             </span>
             <span className={`inline-flex rounded-full px-3 py-1.5 text-xs font-black ${confClass}`}>
               {confidence.label}
             </span>
           </div>
+
+          <div className="mt-6 flex items-center gap-4">
+            <span className="text-5xl sm:text-6xl" aria-hidden>
+              {signalCopy.emoji}
+            </span>
+            <div>
+              <p className="text-lg font-black sm:text-xl">{signalCopy.title}</p>
+              <p className="mt-1 text-sm text-white/75">{signalCopy.hint}</p>
+            </div>
+          </div>
+
           <p className="mt-6 font-bold text-white/70">
             Para sua {input.productName}, o Bota recomenda:
           </p>
@@ -95,9 +128,40 @@ export default function ResultadoPage() {
             Lucro estimado: <strong>{money(profitPerUnit)}</strong> por unidade ·{" "}
             <strong>{money(profitPerHour)}</strong>/hora
           </p>
+
+          {input.hasCompetitorRef && input.competitorPrice != null && input.competitorPrice > 0 && (
+            <p className="mt-3 text-sm text-white/65">
+              Concorrência (referência): {money(input.competitorPrice)} — não entra no cálculo.
+            </p>
+          )}
         </div>
 
-        <div className={`rounded-[1.5rem] border p-5 ${diagClass[diagnosis.tone] ?? diagClass.yellow}`}>
+        {/* Faixas do sinaleiro */}
+        <div className="grid gap-3 sm:grid-cols-3">
+          <SignalCard
+            emoji="🔴"
+            label="Prejuízo"
+            value={result.costPerUnit}
+            text="Abaixo disso você perde dinheiro."
+            active={signalTone === "red"}
+          />
+          <SignalCard
+            emoji="🟡"
+            label="Mínimo"
+            value={result.minimumPrice}
+            text="Cobre o custo com folga pequena."
+            active={signalTone === "yellow"}
+          />
+          <SignalCard
+            emoji="🟢"
+            label="Saudável"
+            value={result.healthyPrice}
+            text="Referência recomendada pelo Bota."
+            active={signalTone === "green"}
+          />
+        </div>
+
+        <div className="rounded-[1.5rem] border border-[var(--border)] bg-white p-5">
           <p className="text-lg font-black">
             {diagnosis.emoji} {diagnosis.title}
           </p>
@@ -105,7 +169,9 @@ export default function ResultadoPage() {
         </div>
 
         <div className="surface rounded-[2rem] p-6 sm:p-8">
-          <p className="text-xs font-black uppercase tracking-[.16em] text-[var(--green)]">Por que este preço?</p>
+          <p className="text-xs font-black uppercase tracking-[.16em] text-[var(--green)]">
+            Por que este preço?
+          </p>
           <h2 className="mt-2 text-2xl font-black">Tudo explicado, sem mistério</h2>
 
           <div className="mt-6 space-y-0 divide-y divide-[var(--border)] font-mono text-sm sm:text-base">
@@ -121,17 +187,62 @@ export default function ResultadoPage() {
 
           <p className="mt-5 leading-7 text-[var(--muted)]">
             Aplicando margem de <strong>{explanation.marginPercent}%</strong>
-            {explanation.feePercent > 0 ? ` e taxa de ${explanation.feePercent}%` : ""}, o preço recomendado
-            fica em <strong className="text-[var(--green-deep)]">{money(explanation.recommendedPrice)}</strong> por
-            unidade.
+            {explanation.feePercent > 0 ? ` e taxa de ${explanation.feePercent}%` : ""}, o preço
+            recomendado fica em{" "}
+            <strong className="text-[var(--green-deep)]">{money(explanation.recommendedPrice)}</strong>{" "}
+            por unidade.
           </p>
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <PriceCard label="⬛ Prejuízo abaixo de" value={result.costPerUnit} text="Não cobre o custo." tone="red" />
-          <PriceCard label="🟡 Mínimo" value={result.minimumPrice} text="Folga pequena." tone="yellow" />
-          <PriceCard label="🟢 Recomendado" value={result.healthyPrice} text="Referência saudável." tone="green" />
-          <PriceCard label="🔵 Premium" value={result.premiumPrice} text="Se o mercado pagar." tone="blue" />
+        {/* Accordion Entenda estes valores */}
+        <div className="surface rounded-[2rem] p-6 sm:p-8">
+          <button
+            type="button"
+            onClick={() => setExplainOpen((o) => !o)}
+            className="flex w-full items-center justify-between gap-3 text-left"
+            aria-expanded={explainOpen}
+          >
+            <div>
+              <p className="text-xs font-black uppercase tracking-[.16em] text-[var(--green)]">
+                Entenda estes valores
+              </p>
+              <h2 className="mt-1 text-xl font-black sm:text-2xl">O que cada número significa</h2>
+            </div>
+            <span className="text-2xl font-black text-[var(--muted)]">{explainOpen ? "−" : "+"}</span>
+          </button>
+
+          {explainOpen && (
+            <dl className="mt-6 space-y-4 border-t border-[var(--border)] pt-6">
+              <ExplainItem
+                term="Prejuízo"
+                def={`Qualquer preço abaixo de ${money(result.costPerUnit)} não cobre o que você gastou para produzir.`} 
+              />
+              <ExplainItem
+                term="Preço mínimo"
+                def={`Por volta de ${money(result.minimumPrice)}: cobre o custo com uma folga pequena. Ainda é apertado.`} 
+              />
+              <ExplainItem
+                term="Preço recomendado"
+                def={`O Bota sugere ${money(result.healthyPrice)} — cobre custos, seu tempo e deixa margem para continuar.`} 
+              />
+              <ExplainItem
+                term="Preço confortável"
+                def={`Acima de ${money(result.premiumPrice)}: se o mercado pagar, sobra mais para reinvestir ou descansar.`} 
+              />
+              <ExplainItem
+                term="Lucro"
+                def={`O que sobra depois de pagar tudo (materiais, tempo, embalagem, taxas). Não é o valor que entra no caixa.`} 
+              />
+              <ExplainItem
+                term="Custo por unidade"
+                def={`${money(result.costPerUnit)} — quanto cada unidade custou para ficar pronta para vender.`} 
+              />
+              <ExplainItem
+                term="Lucro vs faturamento"
+                def="Faturamento é o que o cliente paga. Lucro é o que sobra depois de todos os custos. Os dois números são diferentes."
+              />
+            </dl>
+          )}
         </div>
 
         <PriceSimulator input={input} result={result} />
@@ -173,11 +284,13 @@ export default function ResultadoPage() {
         <div className="surface rounded-[2rem] p-6 sm:p-8">
           <div className="flex items-end justify-between gap-4">
             <div>
-              <p className="text-xs font-black uppercase tracking-[.16em] text-[var(--green)]">Por dentro do lote</p>
+              <p className="text-xs font-black uppercase tracking-[.16em] text-[var(--green)]">
+                Por dentro do lote
+              </p>
               <h2 className="mt-2 text-2xl font-black">Custos totais desta produção</h2>
             </div>
             <span className="rounded-full bg-[var(--green-soft)] px-3 py-1.5 text-xs font-black text-[var(--green)]">
-              {explanation.batch.yieldAmount} un.
+              {result.sellableUnits} un. prontas
             </span>
           </div>
           <div className="mt-6 divide-y divide-[var(--border)]">
@@ -211,9 +324,52 @@ export default function ResultadoPage() {
   );
 }
 
+function SignalCard({
+  emoji,
+  label,
+  value,
+  text,
+  active,
+}: {
+  emoji: string;
+  label: string;
+  value: number;
+  text: string;
+  active: boolean;
+}) {
+  return (
+    <div
+      className={`rounded-3xl border p-5 ${
+        active
+          ? "border-[var(--green)] bg-[var(--green-soft)] ring-2 ring-green-700/15"
+          : "border-[var(--border)] bg-white"
+      }`}
+    >
+      <strong className="text-xs uppercase tracking-[.13em]">
+        {emoji} {label}
+      </strong>
+      <span className="mt-3 block text-xl font-black sm:text-2xl">{money(value)}</span>
+      <p className="mt-2 text-sm leading-6 text-[var(--muted)]">{text}</p>
+    </div>
+  );
+}
+
+function ExplainItem({ term, def }: { term: string; def: string }) {
+  return (
+    <div>
+      <dt className="font-black">{term}</dt>
+      <dd className="mt-1 text-sm leading-6 text-[var(--muted)]">{def}</dd>
+    </div>
+  );
+}
+
 function ExplainRow({ label, value, strong = false }: { label: string; value: number; strong?: boolean }) {
   return (
-    <div className={`flex items-center justify-between gap-4 py-3 ${strong ? "font-black text-[var(--green-deep)]" : ""}`}>
+    <div
+      className={`flex items-center justify-between gap-4 py-3 ${
+        strong ? "font-black text-[var(--green-deep)]" : ""
+      }`}
+    >
       <span className={strong ? "" : "text-[var(--muted)]"}>{label.padEnd(22, ".")}</span>
       <span className="tabular-nums">{money(value)}</span>
     </div>
@@ -222,35 +378,13 @@ function ExplainRow({ label, value, strong = false }: { label: string; value: nu
 
 function Row({ label, value, strong = false }: { label: string; value: number; strong?: boolean }) {
   return (
-    <div className={`flex items-center justify-between gap-4 py-4 ${strong ? "font-black text-[var(--green-deep)]" : ""}`}>
+    <div
+      className={`flex items-center justify-between gap-4 py-4 ${
+        strong ? "font-black text-[var(--green-deep)]" : ""
+      }`}
+    >
       <span>{label}</span>
       <span>{money(value)}</span>
-    </div>
-  );
-}
-
-function PriceCard({
-  label,
-  value,
-  text,
-  tone,
-}: {
-  label: string;
-  value: number;
-  text: string;
-  tone: "red" | "yellow" | "green" | "blue";
-}) {
-  const cls = {
-    red: "border-[#efb6ad] bg-[#fff1ef]",
-    yellow: "border-[#ecd28c] bg-[#fff8df]",
-    green: "border-[#9bc7a8] bg-[#eaf5ed] ring-2 ring-green-700/10",
-    blue: "border-[#9bc4e8] bg-[#eef6fc]",
-  };
-  return (
-    <div className={`rounded-3xl border p-5 ${cls[tone]}`}>
-      <strong className="text-xs uppercase tracking-[.13em]">{label}</strong>
-      <span className="mt-3 block text-xl font-black sm:text-2xl">{money(value)}</span>
-      <p className="mt-2 text-sm leading-6 text-[var(--muted)]">{text}</p>
     </div>
   );
 }
