@@ -20,6 +20,7 @@ import { MaterialEditor } from "./MaterialEditor";
 import { PackagingEditor } from "./PackagingEditor";
 import { ExtraCostsEditor } from "./ExtraCostsEditor";
 import { MoneyField } from "./MoneyField";
+import { NumberStepper } from "./NumberStepper";
 import { ProductNameInput } from "./ProductNameInput";
 import { PrimaryButton } from "./PrimaryButton";
 import { Progress } from "./Progress";
@@ -69,6 +70,8 @@ export function PricingWizard({ mode }: { mode: "rapidin" | "completao" }) {
   const [input, setInput] = useState<PricingInput>(() => emptyInput(isComplete));
   const [draftRestored, setDraftRestored] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
+  /** Índice da sub-pergunta dentro da etapa atual (uma pergunta por vez). */
+  const [subIndex, setSubIndex] = useState(0);
 
   useEffect(() => {
     const draft = loadDraft(mode);
@@ -113,6 +116,11 @@ export function PricingWizard({ mode }: { mode: "rapidin" | "completao" }) {
   const isReview = currentStep?.kind === "review";
   const issues = useMemo(() => validateInput(input, questions), [input, questions]);
 
+  // Ao trocar de etapa, reinicia a sub-pergunta
+  useEffect(() => {
+    setSubIndex(0);
+  }, [safeIndex]);
+
   useEffect(() => {
     setStepIndex((i) => clampStepIndex(i, flow.length));
   }, [flow.length]);
@@ -155,6 +163,7 @@ export function PricingWizard({ mode }: { mode: "rapidin" | "completao" }) {
     clearDraft(mode);
     setInput(emptyInput(isComplete));
     setStepIndex(0);
+    setSubIndex(0);
     setDraftRestored(false);
     lastProfileId.current = null;
     setConfirmReset(false);
@@ -229,6 +238,8 @@ export function PricingWizard({ mode }: { mode: "rapidin" | "completao" }) {
             profile={profile}
             update={update}
             setInput={setInput}
+            subIndex={subIndex}
+            setSubIndex={setSubIndex}
           />
         )}
 
@@ -307,12 +318,16 @@ function QuestionRenderer({
   profile,
   update,
   setInput,
+  subIndex,
+  setSubIndex,
 }: {
   question: WizardQuestion | null;
   input: PricingInput;
   profile: ReturnType<typeof resolveProfile>;
   update: <K extends keyof PricingInput>(field: K, value: PricingInput[K]) => void;
   setInput: React.Dispatch<React.SetStateAction<PricingInput>>;
+  subIndex: number;
+  setSubIndex: React.Dispatch<React.SetStateAction<number>>;
 }) {
   if (!question) return null;
   const product = input.productName || "seu produto";
@@ -344,79 +359,112 @@ function QuestionRenderer({
         />
       )}
 
+      {/* Uma pergunta por vez: rendimento → tempo */}
       {question.kind === "yield-time" && (
-        <div className="grid gap-5 sm:grid-cols-2">
-          <Field
-            label={`Quantidade (${profile.displayName ? "unidades" : "unidades"})`}
-            type="number"
+        <div className="space-y-6">
+          <NumberStepper
+            label="Quantas unidades essa receita deveria render?"
+            value={input.yieldAmount || 1}
             min={1}
-            step={1}
-            value={input.yieldAmount || ""}
-            onChange={(e) => {
-              const n = Number(e.target.value);
+            onChange={(n) => {
               update("yieldAmount", n);
-              if (input.sellableUnits === undefined || input.sellableUnits === input.yieldAmount) {
+              if (
+                input.sellableUnits === undefined ||
+                input.sellableUnits === input.yieldAmount
+              ) {
+                update("sellableUnits", n);
+              }
+              if (subIndex < 1) setSubIndex(1);
+            }}
+            hint="Quantas unidades saem desta receita, no ideal."
+          />
+          {subIndex >= 1 && (
+            <div className="animate-rise">
+              <NumberStepper
+                label="Quantas horas de trabalho?"
+                value={input.workHours || 0}
+                min={0}
+                step={0.25}
+                onChange={(n) => update("workHours", n)}
+                hint="Ex.: 1,5 = 1 hora e 30 minutos."
+              />
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Uma pergunta por vez: outros custos → valor/hora */}
+      {question.kind === "extras-list" && (
+        <div className="space-y-8">
+          <div>
+            <p className="mb-3 text-sm font-black text-[var(--foreground)]">
+              Teve outros custos além dos ingredientes e da embalagem?
+            </p>
+            <ExtraCostsEditor
+              items={input.extraCostItems ?? []}
+              onChange={(extraCostItems) => {
+                update("extraCostItems", extraCostItems);
+                if (subIndex < 1) setSubIndex(1);
+              }}
+            />
+            {subIndex < 1 && (
+              <button
+                type="button"
+                onClick={() => setSubIndex(1)}
+                className="mt-4 text-sm font-black text-[var(--green)] underline"
+              >
+                Não tive / continuar →
+              </button>
+            )}
+          </div>
+          {subIndex >= 1 && (
+            <div className="animate-rise">
+              <MoneyField
+                label="Quanto você gostaria de receber por hora do seu trabalho?"
+                value={input.hourlyRate}
+                onChange={(hourlyRate) => update("hourlyRate", hourlyRate)}
+                hint="O valor é só uma referência. Você manda na conta."
+                placeholder="15,00"
+              />
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Perdas: steppers, segundo inicia igual ao primeiro */}
+      {question.kind === "waste-pair" && (
+        <div className="space-y-6">
+          <NumberStepper
+            label="Esta receita deveria render quantas unidades?"
+            value={input.yieldAmount || 1}
+            min={1}
+            onChange={(n) => {
+              const prev = input.yieldAmount;
+              update("yieldAmount", n);
+              // Se o segundo ainda espelha o primeiro, acompanha
+              if (
+                input.sellableUnits === undefined ||
+                input.sellableUnits === prev
+              ) {
                 update("sellableUnits", n);
               }
             }}
-            hint="Quantas unidades essa receita deveria render."
           />
-          <Field
-            label="Horas de trabalho"
-            type="number"
-            min={0}
-            step={0.25}
-            value={input.workHours || ""}
-            onChange={(e) => update("workHours", Number(e.target.value))}
-            hint="Ex.: 1,5 = 1 hora e 30 minutos."
-          />
-        </div>
-      )}
-
-      {question.kind === "extras-list" && (
-        <div className="space-y-8">
-          {question.field === "extraCostItems" && (
-            <ExtraCostsEditor
-              items={input.extraCostItems ?? []}
-              onChange={(extraCostItems) => update("extraCostItems", extraCostItems)}
-            />
-          )}
-          <MoneyField
-            label="Quanto deseja receber por hora?"
-            value={input.hourlyRate}
-            onChange={(hourlyRate) => update("hourlyRate", hourlyRate)}
-            hint="O valor é só uma referência. Você manda na conta."
-            placeholder="15,00"
-          />
-        </div>
-      )}
-
-      {question.kind === "waste-pair" && (
-        <div className="grid gap-5 sm:grid-cols-2">
-          <Field
-            label="Esta receita deveria render quantas unidades?"
-            type="number"
-            min={1}
-            step={1}
-            value={input.yieldAmount || ""}
-            onChange={(e) => update("yieldAmount", Number(e.target.value))}
-          />
-          <Field
+          <NumberStepper
             label="Quantas ficaram prontas para vender?"
-            type="number"
+            value={input.sellableUnits ?? input.yieldAmount ?? 1}
             min={0}
-            step={1}
-            value={input.sellableUnits ?? input.yieldAmount ?? ""}
-            onChange={(e) => update("sellableUnits", Number(e.target.value))}
-            hint="O Bota calcula o desperdício sozinho."
+            onChange={(n) => update("sellableUnits", n)}
+            hint="Na maioria dos casos é o mesmo número — reduza só se perdeu unidades."
           />
           {input.sellableUnits !== undefined &&
             input.yieldAmount > 0 &&
             input.sellableUnits < input.yieldAmount && (
-              <p className="sm:col-span-2 rounded-2xl bg-[#fff8df] px-4 py-3 text-sm font-bold text-[#8a6a00]">
+              <p className="rounded-2xl bg-[#fff8df] px-4 py-3 text-sm font-bold text-[#8a6a00]">
                 Desperdício estimado:{" "}
-                {Math.round(((input.yieldAmount - input.sellableUnits) / input.yieldAmount) * 1000) /
-                  10}
+                {Math.round(
+                  ((input.yieldAmount - input.sellableUnits) / input.yieldAmount) * 1000
+                ) / 10}
                 % ({input.yieldAmount - input.sellableUnits} unidade
                 {input.yieldAmount - input.sellableUnits !== 1 ? "s" : ""})
               </p>
@@ -435,16 +483,18 @@ function QuestionRenderer({
             }}
           />
           {input.hasSalesFee === true && (
-            <Field
-              label="Taxa sobre a venda (%)"
-              type="number"
-              min={0}
-              max={40}
-              step={0.1}
-              value={input.salesFeePercent || ""}
-              onChange={(e) => update("salesFeePercent", Number(e.target.value))}
-              hint="Cartão, marketplace, app ou comissão."
-            />
+            <div className="animate-rise">
+              <Field
+                label="Taxa sobre a venda (%)"
+                type="number"
+                min={0}
+                max={40}
+                step={0.1}
+                value={input.salesFeePercent || ""}
+                onChange={(e) => update("salesFeePercent", Number(e.target.value))}
+                hint="Cartão, marketplace, app ou comissão."
+              />
+            </div>
           )}
         </div>
       )}
@@ -460,12 +510,14 @@ function QuestionRenderer({
             }}
           />
           {input.hasCompetitorRef === true && (
-            <MoneyField
-              label="Preço da concorrência (referência)"
-              value={input.competitorPrice ?? 0}
-              onChange={(competitorPrice) => update("competitorPrice", competitorPrice)}
-              hint="Não entra no cálculo de custo — só para você comparar."
-            />
+            <div className="animate-rise">
+              <MoneyField
+                label="Preço da concorrência (referência)"
+                value={input.competitorPrice ?? 0}
+                onChange={(competitorPrice) => update("competitorPrice", competitorPrice)}
+                hint="Não entra no cálculo de custo — só para você comparar."
+              />
+            </div>
           )}
         </div>
       )}

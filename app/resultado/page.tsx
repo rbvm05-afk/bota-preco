@@ -96,26 +96,16 @@ export default function ResultadoPage() {
   return (
     <AppShell compact>
       <section className="animate-rise space-y-5">
-        {/* Sinaleiro */}
+        {/* Hero — preço recomendado (verde) é SEMPRE o destaque principal */}
         <div className="relative overflow-hidden rounded-[2.3rem] bg-[var(--green-deep)] p-7 text-white shadow-2xl shadow-green-950/20 sm:p-10">
           <div className="absolute -right-12 -top-16 size-48 rounded-full border-[28px] border-white/5" />
           <div className="flex flex-wrap items-center gap-2">
             <span className="inline-flex rounded-full bg-white/10 px-3 py-1.5 text-xs font-black uppercase tracking-[.15em]">
-              Seu preço
+              🟢 Preço recomendado
             </span>
             <span className={`inline-flex rounded-full px-3 py-1.5 text-xs font-black ${confClass}`}>
               {confidence.label}
             </span>
-          </div>
-
-          <div className="mt-6 flex items-center gap-4">
-            <span className="text-5xl sm:text-6xl" aria-hidden>
-              {signalCopy.emoji}
-            </span>
-            <div>
-              <p className="text-lg font-black sm:text-xl">{signalCopy.title}</p>
-              <p className="mt-1 text-sm text-white/75">{signalCopy.hint}</p>
-            </div>
           </div>
 
           <p className="mt-6 font-bold text-white/70">
@@ -129,6 +119,16 @@ export default function ResultadoPage() {
             <strong>{money(profitPerHour)}</strong>/hora
           </p>
 
+          <div className="mt-5 flex items-center gap-3 rounded-2xl bg-white/10 px-4 py-3">
+            <span className="text-2xl" aria-hidden>
+              {signalCopy.emoji}
+            </span>
+            <div>
+              <p className="text-sm font-black">{signalCopy.title}</p>
+              <p className="text-xs text-white/70">{signalCopy.hint}</p>
+            </div>
+          </div>
+
           {input.hasCompetitorRef && input.competitorPrice != null && input.competitorPrice > 0 && (
             <p className="mt-3 text-sm text-white/65">
               Concorrência (referência): {money(input.competitorPrice)} — não entra no cálculo.
@@ -136,28 +136,32 @@ export default function ResultadoPage() {
           )}
         </div>
 
-        {/* Faixas do sinaleiro */}
+        {/* Três níveis apenas — verde com maior destaque visual */}
         <div className="grid gap-3 sm:grid-cols-3">
           <SignalCard
             emoji="🔴"
             label="Prejuízo"
             value={result.costPerUnit}
-            text="Abaixo disso você perde dinheiro."
+            text="Nunca venda abaixo disso. Você perde dinheiro."
+            tone="red"
             active={signalTone === "red"}
           />
           <SignalCard
             emoji="🟡"
             label="Mínimo"
             value={result.minimumPrice}
-            text="Cobre o custo com folga pequena."
+            text="Cobre o custo. É o limite inferior — ainda apertado."
+            tone="yellow"
             active={signalTone === "yellow"}
           />
           <SignalCard
             emoji="🟢"
-            label="Saudável"
+            label="Recomendado"
             value={result.healthyPrice}
-            text="Referência recomendada pelo Bota."
-            active={signalTone === "green"}
+            text="Este é o preço que o Bota sugere vender."
+            tone="green"
+            active
+            featured
           />
         </div>
 
@@ -194,7 +198,6 @@ export default function ResultadoPage() {
           </p>
         </div>
 
-        {/* Accordion Entenda estes valores */}
         <div className="surface rounded-[2rem] p-6 sm:p-8">
           <button
             type="button"
@@ -214,20 +217,20 @@ export default function ResultadoPage() {
           {explainOpen && (
             <dl className="mt-6 space-y-4 border-t border-[var(--border)] pt-6">
               <ExplainItem
-                term="Prejuízo"
-                def={`Qualquer preço abaixo de ${money(result.costPerUnit)} não cobre o que você gastou para produzir.`} 
+                term="🔴 Prejuízo"
+                def={`Qualquer preço abaixo de ${money(result.costPerUnit)} não cobre o que você gastou para produzir. Nunca venda aqui.`} 
               />
               <ExplainItem
-                term="Preço mínimo"
-                def={`Por volta de ${money(result.minimumPrice)}: cobre o custo com uma folga pequena. Ainda é apertado.`} 
+                term="🟡 Preço mínimo"
+                def={`Por volta de ${money(result.minimumPrice)}: cobre o custo com uma folga pequena. Serve só como limite inferior.`} 
               />
               <ExplainItem
-                term="Preço recomendado"
-                def={`O Bota sugere ${money(result.healthyPrice)} — cobre custos, seu tempo e deixa margem para continuar.`} 
+                term="🟢 Preço recomendado"
+                def={`O Bota sugere ${money(result.healthyPrice)} — cobre custos, seu tempo e deixa margem para continuar. Este é o valor principal.`} 
               />
               <ExplainItem
-                term="Preço confortável"
-                def={`Acima de ${money(result.premiumPrice)}: se o mercado pagar, sobra mais para reinvestir ou descansar.`} 
+                term="Margem maior (oportunidade)"
+                def={`Se o mercado pagar mais (produto premium, marca forte), valores acima de ${money(result.premiumPrice)} aumentam o lucro sem mudar o custo.`} 
               />
               <ExplainItem
                 term="Lucro"
@@ -329,26 +332,50 @@ function SignalCard({
   label,
   value,
   text,
-  active,
+  tone,
+  active = false,
+  featured = false,
 }: {
   emoji: string;
   label: string;
   value: number;
   text: string;
-  active: boolean;
+  tone: "red" | "yellow" | "green";
+  active?: boolean;
+  featured?: boolean;
 }) {
+  const toneBorder =
+    tone === "green"
+      ? "border-[var(--green)]"
+      : tone === "yellow"
+        ? "border-[#ecd28c]"
+        : "border-[#efb6ad]";
+  const toneBg =
+    tone === "green"
+      ? "bg-[var(--green-soft)]"
+      : tone === "yellow"
+        ? "bg-[#fff8df]"
+        : "bg-[#fff1ef]";
+
   return (
     <div
-      className={`rounded-3xl border p-5 ${
-        active
-          ? "border-[var(--green)] bg-[var(--green-soft)] ring-2 ring-green-700/15"
-          : "border-[var(--border)] bg-white"
+      className={`rounded-3xl border p-5 transition ${
+        featured
+          ? `${toneBorder} ${toneBg} ring-2 ring-green-700/20 shadow-md sm:scale-[1.02]`
+          : active
+            ? `${toneBorder} ${toneBg}`
+            : "border-[var(--border)] bg-white"
       }`}
     >
-      <strong className="text-xs uppercase tracking-[.13em]">
+      <strong className={`text-xs uppercase tracking-[.13em] ${featured ? "text-[var(--green-deep)]" : ""}`}>
         {emoji} {label}
+        {featured ? " ★" : ""}
       </strong>
-      <span className="mt-3 block text-xl font-black sm:text-2xl">{money(value)}</span>
+      <span
+        className={`mt-3 block font-black ${featured ? "text-2xl text-[var(--green-deep)] sm:text-3xl" : "text-xl sm:text-2xl"}`}
+      >
+        {money(value)}
+      </span>
       <p className="mt-2 text-sm leading-6 text-[var(--muted)]">{text}</p>
     </div>
   );
