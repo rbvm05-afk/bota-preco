@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { calculatePrice } from "@/src/domain/pricing";
 import { saveCalculation } from "@/lib/storage";
 import { clearDraft, loadDraft, saveDraft } from "@/lib/DraftManager";
+import { buildTestInput } from "@/lib/testFill";
 import { resolveProfile } from "@/engine/profiles";
 import { getInputDefaults } from "@/src/domain/products";
 import {
@@ -70,7 +71,6 @@ export function PricingWizard({ mode }: { mode: "rapidin" | "completao" }) {
   const [input, setInput] = useState<PricingInput>(() => emptyInput(isComplete));
   const [draftRestored, setDraftRestored] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
-  /** Índice da sub-pergunta dentro da etapa atual (uma pergunta por vez). */
   const [subIndex, setSubIndex] = useState(0);
 
   useEffect(() => {
@@ -116,7 +116,6 @@ export function PricingWizard({ mode }: { mode: "rapidin" | "completao" }) {
   const isReview = currentStep?.kind === "review";
   const issues = useMemo(() => validateInput(input, questions), [input, questions]);
 
-  // Ao trocar de etapa, reinicia a sub-pergunta
   useEffect(() => {
     setSubIndex(0);
   }, [safeIndex]);
@@ -169,6 +168,18 @@ export function PricingWizard({ mode }: { mode: "rapidin" | "completao" }) {
     setConfirmReset(false);
   };
 
+  /** Preenche todos os campos obrigatórios com valores simbólicos (QA). */
+  const fillTester = () => {
+    const filled = buildTestInput(input);
+    setInput(filled);
+    lastProfileId.current = resolveProfile(filled.productName).id;
+    setSubIndex(99); // revela sub-perguntas
+    // vai para a revisão se o fluxo já tiver essa etapa
+    const reviewIdx = flow.findIndex((s) => s.kind === "review");
+    if (reviewIdx >= 0) setStepIndex(reviewIdx);
+    else setStepIndex(clampStepIndex(flow.length - 1, flow.length));
+  };
+
   const contextItems = useMemo(
     () => getStepContext(currentQuestion, input, isReview),
     [currentQuestion, input, isReview]
@@ -191,6 +202,14 @@ export function PricingWizard({ mode }: { mode: "rapidin" | "completao" }) {
             <span className="hidden text-right text-xs font-bold text-[var(--muted)] sm:inline">
               {draftRestored ? "Rascunho recuperado" : "Salvo automaticamente"}
             </span>
+            <button
+              type="button"
+              onClick={fillTester}
+              title="Preenche todos os campos obrigatórios com valores de teste"
+              className="rounded-full border border-dashed border-[#c4a35a] bg-[#fffaf0] px-3 py-1.5 text-xs font-black text-[#8a6a00] transition hover:border-[#8a6a00] hover:bg-[#fff3d0]"
+            >
+              🧪 Tester
+            </button>
             <button
               type="button"
               onClick={() => setConfirmReset(true)}
@@ -359,7 +378,6 @@ function QuestionRenderer({
         />
       )}
 
-      {/* Uma pergunta por vez: rendimento → tempo */}
       {question.kind === "yield-time" && (
         <div className="space-y-6">
           <NumberStepper
@@ -393,7 +411,6 @@ function QuestionRenderer({
         </div>
       )}
 
-      {/* Uma pergunta por vez: outros custos → valor/hora */}
       {question.kind === "extras-list" && (
         <div className="space-y-8">
           <div>
@@ -431,7 +448,6 @@ function QuestionRenderer({
         </div>
       )}
 
-      {/* Perdas: steppers, segundo inicia igual ao primeiro */}
       {question.kind === "waste-pair" && (
         <div className="space-y-6">
           <NumberStepper
@@ -441,7 +457,6 @@ function QuestionRenderer({
             onChange={(n) => {
               const prev = input.yieldAmount;
               update("yieldAmount", n);
-              // Se o segundo ainda espelha o primeiro, acompanha
               if (
                 input.sellableUnits === undefined ||
                 input.sellableUnits === prev
