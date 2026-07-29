@@ -8,6 +8,7 @@ import {
   type StoredPriceHistory,
 } from "@/src/pricing/priceReference";
 import type { MaterialItem, MeasurementUnit } from "@/types/pricing";
+import { MoneyField } from "./MoneyField";
 
 const normalizeName = (name: string) => name.toLocaleLowerCase("pt-BR");
 
@@ -16,6 +17,7 @@ const makeItem = (name = "", previous?: Partial<MaterialItem>): MaterialItem => 
   return {
     id: previous?.id ?? crypto.randomUUID(),
     name: name || previous?.name || "",
+    brand: previous?.brand ?? "Genérica",
     paid: previous?.paid ?? 0,
     packageAmount: previous?.packageAmount ?? 0,
     packageUnit: previous?.packageUnit ?? units.defaultUnit,
@@ -80,30 +82,110 @@ function AmountWithUnit({ label, value, unit, allowedUnits, placeholder, onValue
   );
 }
 
-export function MaterialEditor({ items, onChange, materialLabel, placeholder, suggestedMaterials = [] }: {
-  items: MaterialItem[]; onChange: (items: MaterialItem[]) => void; materialLabel: string; placeholder: string; suggestedMaterials?: string[];
+function PriceReferenceHint({ item }: { item: MaterialItem }) {
+  if (!item.name.trim()) return null;
+  try {
+    const raw = typeof window !== "undefined" ? window.localStorage.getItem(PRICE_HISTORY_STORAGE_KEY) : null;
+    if (!raw) {
+      return (
+        <p className="text-[11px] font-bold text-[var(--muted)]">
+          Preço de referência indisponível.
+        </p>
+      );
+    }
+    const history: StoredPriceHistory = JSON.parse(raw);
+    const ref = history[normalizePriceKey(item.name)];
+    if (!ref || !ref.amount) {
+      return (
+        <p className="text-[11px] font-bold text-[var(--muted)]">
+          Preço de referência indisponível.
+        </p>
+      );
+    }
+    const pkg =
+      ref.packageAmount && ref.packageUnit
+        ? ` · Pacote de ${ref.packageAmount} ${unitLabels[ref.packageUnit] ?? ref.packageUnit}`
+        : "";
+    return (
+      <div className="rounded-xl border border-green-200 bg-[var(--green-soft)] px-3 py-2 text-xs font-bold text-[var(--green-deep)]">
+        Preço encontrado: R${" "}
+        {ref.amount.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+        {pkg}
+        <span className="ml-1 font-medium text-[var(--muted)]">({ref.label})</span>
+      </div>
+    );
+  } catch {
+    return (
+      <p className="text-[11px] font-bold text-[var(--muted)]">
+        Preço de referência indisponível.
+      </p>
+    );
+  }
+}
+
+export function MaterialEditor({
+  items,
+  onChange,
+  materialLabel,
+  placeholder,
+  suggestedMaterials = [],
+}: {
+  items: MaterialItem[];
+  onChange: (items: MaterialItem[]) => void;
+  materialLabel: string;
+  placeholder: string;
+  suggestedMaterials?: string[];
 }) {
   const draftByName = useRef<Map<string, MaterialItem>>(new Map());
-  const remember = (item: MaterialItem) => { if (item.name.trim()) draftByName.current.set(normalizeName(item.name), { ...item }); };
+  const remember = (item: MaterialItem) => {
+    if (item.name.trim()) draftByName.current.set(normalizeName(item.name), { ...item });
+  };
 
   const update = <K extends keyof MaterialItem>(id: string, field: K, value: MaterialItem[K]) =>
-    onChange(items.map((item) => { if (item.id !== id) return item; const next = { ...item, [field]: value }; remember(next); return next; }));
+    onChange(
+      items.map((item) => {
+        if (item.id !== id) return item;
+        const next = { ...item, [field]: value };
+        remember(next);
+        return next;
+      }),
+    );
 
   const updateName = (id: string, name: string) => {
     const units = inferUnits(name);
-    onChange(items.map((item) => {
-      if (item.id !== id) return item;
-      const next = { ...item, name, packageUnit: units.allowedUnits.includes(item.packageUnit) ? item.packageUnit : units.defaultUnit, usedUnit: units.allowedUnits.includes(item.usedUnit) ? item.usedUnit : units.defaultUnit };
-      remember(next); return next;
-    }));
+    onChange(
+      items.map((item) => {
+        if (item.id !== id) return item;
+        const next = {
+          ...item,
+          name,
+          packageUnit: units.allowedUnits.includes(item.packageUnit)
+            ? item.packageUnit
+            : units.defaultUnit,
+          usedUnit: units.allowedUnits.includes(item.usedUnit)
+            ? item.usedUnit
+            : units.defaultUnit,
+        };
+        remember(next);
+        return next;
+      }),
+    );
   };
 
   const chooseKnowledge = (id: string, suggestion: KnowledgeItem) => {
-    onChange(items.map((item) => {
-      if (item.id !== id) return item;
-      const next = { ...item, name: suggestion.name, packageUnit: suggestion.defaultUnit, usedUnit: suggestion.defaultUnit };
-      remember(next); return next;
-    }));
+    onChange(
+      items.map((item) => {
+        if (item.id !== id) return item;
+        const next = {
+          ...item,
+          name: suggestion.name,
+          packageUnit: suggestion.defaultUnit,
+          usedUnit: suggestion.defaultUnit,
+        };
+        remember(next);
+        return next;
+      }),
+    );
   };
 
   const remove = (id: string) => {
@@ -123,9 +205,13 @@ export function MaterialEditor({ items, onChange, materialLabel, placeholder, su
       return;
     }
     const suggested = makeItem(name, draftByName.current.get(key));
-    const emptyIndex = items.findIndex((i) => !i.name && !i.paid && !i.packageAmount && !i.usedAmount);
+    const emptyIndex = items.findIndex(
+      (i) => !i.name && !i.paid && !i.packageAmount && !i.usedAmount,
+    );
     if (emptyIndex >= 0) {
-      onChange(items.map((item, index) => (index === emptyIndex ? { ...suggested, id: item.id } : item)));
+      onChange(
+        items.map((item, index) => (index === emptyIndex ? { ...suggested, id: item.id } : item)),
+      );
       return;
     }
     onChange([...items, suggested]);
@@ -133,7 +219,9 @@ export function MaterialEditor({ items, onChange, materialLabel, placeholder, su
 
   const addAllSuggested = () => {
     const existing = new Set(items.filter((i) => i.name).map((i) => normalizeName(i.name)));
-    const additions = suggestedMaterials.filter((n) => !existing.has(normalizeName(n))).map((n) => makeItem(n, draftByName.current.get(normalizeName(n))));
+    const additions = suggestedMaterials
+      .filter((n) => !existing.has(normalizeName(n)))
+      .map((n) => makeItem(n, draftByName.current.get(normalizeName(n))));
     const meaningful = items.filter((i) => i.name || i.paid || i.packageAmount || i.usedAmount);
     onChange(additions.length || meaningful.length ? [...meaningful, ...additions] : [makeItem()]);
   };
@@ -143,9 +231,19 @@ export function MaterialEditor({ items, onChange, materialLabel, placeholder, su
     try {
       const raw = window.localStorage.getItem(PRICE_HISTORY_STORAGE_KEY);
       const history: StoredPriceHistory = raw ? JSON.parse(raw) : {};
-      history[normalizePriceKey(item.name)] = { source: "history", amount: item.paid, currency: "BRL", label: "Seu último preço", packageAmount: item.packageAmount || undefined, packageUnit: item.packageUnit, savedAt: new Date().toISOString() };
+      history[normalizePriceKey(item.name)] = {
+        source: "history",
+        amount: item.paid,
+        currency: "BRL",
+        label: "Seu último preço",
+        packageAmount: item.packageAmount || undefined,
+        packageUnit: item.packageUnit,
+        savedAt: new Date().toISOString(),
+      };
       window.localStorage.setItem(PRICE_HISTORY_STORAGE_KEY, JSON.stringify(history));
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   };
 
   return (
@@ -155,15 +253,32 @@ export function MaterialEditor({ items, onChange, materialLabel, placeholder, su
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="font-black text-[var(--green-deep)]">Monte sua receita mais rápido</p>
-              <p className="mt-1 text-sm font-medium text-[var(--muted)]">Clique para adicionar ou remover. Nada entra na conta até você escolher.</p>
+              <p className="mt-1 text-sm font-medium text-[var(--muted)]">
+                Clique para adicionar ou remover. Nada entra na conta até você escolher.
+              </p>
             </div>
-            <button type="button" onClick={addAllSuggested} className="shrink-0 rounded-xl bg-[var(--green)] px-4 py-3 text-sm font-black text-white">Adicionar todos</button>
+            <button
+              type="button"
+              onClick={addAllSuggested}
+              className="shrink-0 rounded-xl bg-[var(--green)] px-4 py-3 text-sm font-black text-white"
+            >
+              Adicionar todos
+            </button>
           </div>
           <div className="mt-4 flex flex-wrap gap-2">
             {suggestedMaterials.map((name) => {
               const added = items.some((i) => normalizeName(i.name) === normalizeName(name));
               return (
-                <button key={name} type="button" onClick={() => toggleSuggested(name)} className={`rounded-full border px-3 py-2 text-xs font-black ${added ? "border-green-300 bg-white text-[var(--green-deep)]" : "border-green-200 bg-white/70 text-[var(--green-deep)]"}`}>
+                <button
+                  key={name}
+                  type="button"
+                  onClick={() => toggleSuggested(name)}
+                  className={`rounded-full border px-3 py-2 text-xs font-black ${
+                    added
+                      ? "border-green-300 bg-white text-[var(--green-deep)]"
+                      : "border-green-200 bg-white/70 text-[var(--green-deep)]"
+                  }`}
+                >
                   {added ? "✓ " : "+ "}{name}
                 </button>
               );
@@ -175,28 +290,86 @@ export function MaterialEditor({ items, onChange, materialLabel, placeholder, su
       {items.map((item, index) => {
         const unitConfig = inferUnits(item.name);
         return (
-          <div key={item.id} className="rounded-3xl border border-[var(--border)] bg-white p-4 shadow-sm sm:p-5">
+          <div
+            key={item.id}
+            className="rounded-3xl border border-[var(--border)] bg-white p-4 shadow-sm sm:p-5"
+          >
             <div className="mb-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <span className="grid size-9 place-items-center rounded-xl bg-[var(--green-soft)] text-sm font-black text-[var(--green)]">{index + 1}</span>
-                <strong>{item.name || `${materialLabel.charAt(0).toUpperCase()}${materialLabel.slice(1)} ${index + 1}`}</strong>
+                <span className="grid size-9 place-items-center rounded-xl bg-[var(--green-soft)] text-sm font-black text-[var(--green)]">
+                  {index + 1}
+                </span>
+                <strong>
+                  {item.name ||
+                    `${materialLabel.charAt(0).toUpperCase()}${materialLabel.slice(1)} ${index + 1}`}
+                </strong>
               </div>
-              <button type="button" onClick={() => remove(item.id)} className="rounded-xl px-3 py-2 text-xs font-black text-[var(--red)] hover:bg-red-50">Remover</button>
+              <button
+                type="button"
+                onClick={() => remove(item.id)}
+                className="rounded-xl px-3 py-2 text-xs font-black text-[var(--red)] hover:bg-red-50"
+              >
+                Remover
+              </button>
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
-              <MaterialNameInput item={item} onUpdate={(v) => updateName(item.id, v)} onChoose={(s) => chooseKnowledge(item.id, s)} materialLabel={materialLabel} placeholder={placeholder} />
+              <MaterialNameInput
+                item={item}
+                onUpdate={(v) => updateName(item.id, v)}
+                onChoose={(s) => chooseKnowledge(item.id, s)}
+                materialLabel={materialLabel}
+                placeholder={placeholder}
+              />
               <label className="grid gap-1.5 text-xs font-black text-[var(--muted)]">
-                QUANTO PAGOU?
-                <input type="number" min="0" step="0.01" value={item.paid || ""} onChange={(e) => update(item.id, "paid", Number(e.target.value))} onBlur={() => savePriceHistory(item)} placeholder="Ex.: 35,00" className={inputClass} />
+                MARCA
+                <input
+                  value={item.brand ?? "Genérica"}
+                  onChange={(e) => update(item.id, "brand", e.target.value)}
+                  placeholder="Genérica"
+                  className={inputClass}
+                />
               </label>
-              <AmountWithUnit label="QUANTO VEIO NA EMBALAGEM?" value={item.packageAmount} unit={item.packageUnit} allowedUnits={unitConfig.allowedUnits} placeholder="Ex.: 395" onValueChange={(v) => update(item.id, "packageAmount", Number(v))} onUnitChange={(u) => update(item.id, "packageUnit", u)} />
-              <AmountWithUnit label="QUANTO USOU NESTE LOTE?" value={item.usedAmount} unit={item.usedUnit} allowedUnits={unitConfig.allowedUnits} placeholder="Ex.: 50" onValueChange={(v) => update(item.id, "usedAmount", Number(v))} onUnitChange={(u) => update(item.id, "usedUnit", u)} />
+              <div className="sm:col-span-2">
+                <MoneyField
+                  label="Quanto pagou?"
+                  value={item.paid}
+                  onChange={(paid) => {
+                    update(item.id, "paid", paid);
+                  }}
+                  placeholder="12,50"
+                />
+                <div className="mt-2" onBlur={() => savePriceHistory(item)}>
+                  <PriceReferenceHint item={item} />
+                </div>
+              </div>
+              <AmountWithUnit
+                label="QUANTO VEIO NA EMBALAGEM?"
+                value={item.packageAmount}
+                unit={item.packageUnit}
+                allowedUnits={unitConfig.allowedUnits}
+                placeholder="Ex.: 395"
+                onValueChange={(v) => update(item.id, "packageAmount", Number(v))}
+                onUnitChange={(u) => update(item.id, "packageUnit", u)}
+              />
+              <AmountWithUnit
+                label="QUANTO USOU NESTE LOTE?"
+                value={item.usedAmount}
+                unit={item.usedUnit}
+                allowedUnits={unitConfig.allowedUnits}
+                placeholder="Ex.: 50"
+                onValueChange={(v) => update(item.id, "usedAmount", Number(v))}
+                onUnitChange={(u) => update(item.id, "usedUnit", u)}
+              />
             </div>
           </div>
         );
       })}
 
-      <button type="button" onClick={() => onChange([...items, makeItem()])} className="w-full rounded-2xl border border-dashed border-[#8db49a] bg-white/45 px-4 py-4 font-black text-[var(--green)] hover:bg-[var(--green-soft)]">
+      <button
+        type="button"
+        onClick={() => onChange([...items, makeItem()])}
+        className="w-full rounded-2xl border border-dashed border-[#8db49a] bg-white/45 px-4 py-4 font-black text-[var(--green)] hover:bg-[var(--green-soft)]"
+      >
         ＋ Adicionar outro {materialLabel}
       </button>
     </div>
