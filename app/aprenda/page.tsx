@@ -26,10 +26,14 @@ export default function AprendaPage() {
 
         <section className="grid gap-3 sm:grid-cols-3">
           {GUIDE_CATEGORIES.map((cat) => (
-            <div key={cat.slug} className="surface rounded-2xl p-5">
+            <Link
+              key={cat.slug}
+              href={`/aprenda/categoria/${cat.slug}`}
+              className="surface rounded-2xl p-5 transition hover:border-[var(--green)]"
+            >
               <h2 className="font-black">{cat.title}</h2>
               <p className="mt-2 text-sm text-[var(--muted)]">{cat.description}</p>
-            </div>
+            </Link>
           ))}
         </section>
 
@@ -38,7 +42,9 @@ export default function AprendaPage() {
           <ul className="mt-4 space-y-3">
             {(published.length ? published : GUIDE_ARTICLES).map((a) => (
               <li key={a.slug} className="border-b border-[var(--border)] pb-3 last:border-0">
-                <p className="font-black">{a.title}</p>
+                <Link href={`/aprenda/${a.slug}`} className="font-black hover:text-[var(--green)]">
+                  {a.title}
+                </Link>
                 <p className="text-sm text-[var(--muted)]">{a.description}</p>
               </li>
             ))}
