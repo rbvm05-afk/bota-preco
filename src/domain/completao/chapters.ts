@@ -1,6 +1,6 @@
 /**
- * Capítulos do Completão — estrutura de consultoria.
- * Cada capítulo pode ter várias perguntas, mas a UI mostra UMA por vez.
+ * Capítulos do Completão — consultoria, não formulário.
+ * UI: uma pergunta por vez dentro de cada capítulo.
  */
 
 export type ChapterId =
@@ -10,12 +10,10 @@ export type ChapterId =
   | "embalagens"
   | "custos"
   | "venda"
-  | "objetivos"
-  | "revisao";
+  | "objetivos";
 
 export type ChapterQuestion = {
   id: string;
-  /** Campo lógico / chave de resposta */
   field: string;
   label: string;
   title: string;
@@ -50,7 +48,7 @@ export const COMPLETAO_CHAPTERS: Chapter[] = [
   {
     id: "produto",
     number: 1,
-    title: "Sobre seu produto",
+    title: "Seu produto",
     subtitle: "Quem você é e como trabalha",
     emoji: "👋",
     questions: [
@@ -74,26 +72,10 @@ export const COMPLETAO_CHAPTERS: Chapter[] = [
         ],
       },
       {
-        id: "how-sells",
-        field: "howSells",
-        label: "Como vende",
-        title: "Como você vende hoje?",
-        text: "WhatsApp, feira, Instagram, iFood…",
-        kind: "text",
-        optional: true,
-      },
-      {
-        id: "works-alone",
-        field: "worksAlone",
-        label: "Equipe",
-        title: "Você trabalha sozinho(a)?",
-        kind: "boolean",
-      },
-      {
         id: "order-ready",
         field: "orderOrReady",
         label: "Modelo",
-        title: "Trabalha sob encomenda, pronta entrega ou os dois?",
+        title: "Sob encomenda, pronta entrega ou os dois?",
         kind: "choice",
         options: [
           { value: "order", label: "Encomenda" },
@@ -101,21 +83,30 @@ export const COMPLETAO_CHAPTERS: Chapter[] = [
           { value: "both", label: "Os dois" },
         ],
       },
+      {
+        id: "how-sells",
+        field: "howSells",
+        label: "Onde vende",
+        title: "Onde costuma vender?",
+        text: "WhatsApp, feira, Instagram, iFood…",
+        kind: "text",
+        optional: true,
+      },
     ],
   },
   {
     id: "ingredientes",
     number: 2,
-    title: "Ingredientes",
-    subtitle: "Tudo o que entra na receita",
+    title: "Ingredientes ou materiais",
+    subtitle: "Lista detalhada do que entra na conta",
     emoji: "📦",
     questions: [
       {
         id: "materials",
         field: "materials",
         label: "Ingredientes",
-        title: "Quais ingredientes você usa?",
-        text: "Adicione quantos precisar. Marca, preço e quantidade.",
+        title: "Quais ingredientes ou materiais você usa?",
+        text: "Marca, preço pago, quanto veio e quanto usou.",
         kind: "materials",
       },
     ],
@@ -123,7 +114,7 @@ export const COMPLETAO_CHAPTERS: Chapter[] = [
   {
     id: "producao",
     number: 3,
-    title: "Produção",
+    title: "Como você faz",
     subtitle: "Rendimento, tempo e perdas",
     emoji: "🏭",
     questions: [
@@ -138,32 +129,30 @@ export const COMPLETAO_CHAPTERS: Chapter[] = [
         id: "waste",
         field: "sellableUnits",
         label: "Perdas",
-        title: "Quantas unidades deveriam sair — e quantas ficaram prontas?",
+        title: "Quantas deveriam sair — e quantas ficaram prontas?",
         kind: "waste-pair",
       },
       {
-        id: "process",
-        field: "processNotes",
-        label: "Processo",
-        title: "Quer anotar algo sobre o processo de produção?",
-        text: "Opcional — ajuda em revisões futuras.",
-        kind: "text",
-        optional: true,
+        id: "works-alone",
+        field: "worksAlone",
+        label: "Ajuda",
+        title: "Você tem ajuda de outras pessoas na produção?",
+        kind: "boolean",
       },
     ],
   },
   {
     id: "embalagens",
     number: 4,
-    title: "Embalagens",
-    subtitle: "Kit completo do produto",
+    title: "Embalagem e entrega",
+    subtitle: "Kit completo até o cliente",
     emoji: "🛍️",
     questions: [
       {
         id: "packaging",
         field: "packagingItems",
         label: "Embalagens",
-        title: "Qual kit de embalagem você usa?",
+        title: "Quais embalagens, etiquetas e sacolas você usa?",
         kind: "packaging",
       },
     ],
@@ -171,30 +160,24 @@ export const COMPLETAO_CHAPTERS: Chapter[] = [
   {
     id: "custos",
     number: 5,
-    title: "Custos",
-    subtitle: "Gastos extras e valor da sua hora",
+    title: "Custos do negócio",
+    subtitle: "Gastos que costumam passar batido",
     emoji: "🧾",
     questions: [
       {
         id: "extras",
         field: "extraCostItems",
         label: "Outros gastos",
-        title: "Teve outros custos neste lote?",
+        title: "Quais outros custos entram neste lote?",
+        text: "Gás, energia, aluguel rateado, equipamentos…",
         kind: "extras-list",
-      },
-      {
-        id: "hourly",
-        field: "hourlyRate",
-        label: "Sua hora",
-        title: "Quanto você quer receber por hora?",
-        kind: "money",
       },
     ],
   },
   {
     id: "venda",
     number: 6,
-    title: "Venda",
+    title: "Como você vende",
     subtitle: "Taxas, canais e concorrência",
     emoji: "💳",
     questions: [
@@ -202,7 +185,7 @@ export const COMPLETAO_CHAPTERS: Chapter[] = [
         id: "fees",
         field: "salesFeePercent",
         label: "Taxas",
-        title: "Você paga alguma taxa quando vende?",
+        title: "Você paga taxa de cartão, marketplace ou comissão?",
         kind: "fees-gate",
       },
       {
@@ -233,10 +216,17 @@ export const COMPLETAO_CHAPTERS: Chapter[] = [
   {
     id: "objetivos",
     number: 7,
-    title: "Objetivos",
-    subtitle: "O que você quer conquistar",
+    title: "Seu trabalho e seus objetivos",
+    subtitle: "O valor do seu tempo e o que você quer conquistar",
     emoji: "🎯",
     questions: [
+      {
+        id: "hourly",
+        field: "hourlyRate",
+        label: "Sua hora",
+        title: "Quanto deseja receber por hora do seu trabalho?",
+        kind: "money",
+      },
       {
         id: "monthly-income",
         field: "desiredMonthlyIncome",
@@ -246,21 +236,54 @@ export const COMPLETAO_CHAPTERS: Chapter[] = [
         optional: true,
       },
       {
-        id: "goals-notes",
-        field: "goalsNotes",
-        label: "Metas",
-        title: "Alguma expectativa ou meta que queira registrar?",
-        kind: "text",
+        id: "priority",
+        field: "priority",
+        label: "Prioridade",
+        title: "O que é mais importante agora?",
+        kind: "choice",
+        options: [
+          { value: "volume", label: "Vender mais unidades" },
+          { value: "margin", label: "Ganhar mais por unidade" },
+          { value: "balance", label: "Equilíbrio entre os dois" },
+        ],
         optional: true,
       },
     ],
   },
 ];
 
+export type FlatQuestion = ChapterQuestion & {
+  chapterId: ChapterId;
+  chapterNumber: number;
+  chapterTitle: string;
+  chapterEmoji: string;
+  indexInChapter: number;
+  chapterLen: number;
+};
+
+/** Lista plana de perguntas na ordem de navegação. */
+export function flattenQuestions(): FlatQuestion[] {
+  const out: FlatQuestion[] = [];
+  for (const ch of COMPLETAO_CHAPTERS) {
+    ch.questions.forEach((q, i) => {
+      out.push({
+        ...q,
+        chapterId: ch.id,
+        chapterNumber: ch.number,
+        chapterTitle: ch.title,
+        chapterEmoji: ch.emoji,
+        indexInChapter: i,
+        chapterLen: ch.questions.length,
+      });
+    });
+  }
+  return out;
+}
+
 export function getChapter(id: ChapterId): Chapter | undefined {
   return COMPLETAO_CHAPTERS.find((c) => c.id === id);
 }
 
 export function totalChapterQuestions(): number {
-  return COMPLETAO_CHAPTERS.reduce((acc, c) => acc + c.questions.length, 0);
+  return flattenQuestions().length;
 }
