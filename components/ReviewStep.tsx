@@ -1,6 +1,6 @@
 "use client";
 
-import { calculatePrice, money } from "@/src/domain/pricing";
+import { money } from "@/src/domain/pricing";
 import type { FieldIssue } from "@/src/domain/flow";
 import type { PricingInput } from "@/types/pricing";
 import type { ProductProfile } from "@/engine/types";
@@ -16,9 +16,9 @@ export function ReviewStep({
   issues: FieldIssue[];
   onEdit: (stepId: string) => void;
 }) {
-  const result = calculatePrice(input);
   const materials = input.materials.filter((m) => m.name.trim());
   const packaging = (input.packagingItems ?? []).filter((p) => p.name.trim());
+  const extras = (input.extraCostItems ?? []).filter((e) => e.name.trim());
 
   return (
     <div className="space-y-5">
@@ -96,19 +96,37 @@ export function ReviewStep({
         </ReviewCard>
       )}
 
-      <ReviewCard title="Margem e taxas" onEdit={() => onEdit("margin")}>
+      {(extras.length > 0 || input.extraCosts > 0) && (
+        <ReviewCard title="Outros gastos" onEdit={() => onEdit("extras")}>
+          {extras.length > 0 ? (
+            <ul className="space-y-1 text-sm">
+              {extras.map((e) => (
+                <li key={e.id}>
+                  {e.name} — {money(e.amount)}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm">{money(input.extraCosts)}</p>
+          )}
+        </ReviewCard>
+      )}
+
+      <ReviewCard title="Perdas e taxas" onEdit={() => onEdit("waste")}>
         <p className="text-sm">
-          Margem <strong>{input.desiredMargin}%</strong>
-          {input.salesFeePercent > 0 ? ` · Taxa ${input.salesFeePercent}%` : ""}
-          {input.wastePercent > 0 ? ` · Perdas ${input.wastePercent}%` : ""}
+          {input.sellableUnits != null && input.yieldAmount > 0
+            ? `${input.sellableUnits} de ${input.yieldAmount} unidades prontas`
+            : `Perdas ${input.wastePercent}%`}
+          {input.hasSalesFee && input.salesFeePercent > 0
+            ? ` · Taxa ${input.salesFeePercent}%`
+            : ""}
         </p>
       </ReviewCard>
 
-      <div className="rounded-2xl border border-green-200 bg-[var(--green-soft)] p-4">
-        <p className="text-xs font-black uppercase tracking-wide text-[var(--green)]">Prévia do preço verde</p>
-        <p className="mt-1 text-2xl font-black text-[var(--green-deep)]">{money(result.healthyPrice)}</p>
-        <p className="mt-1 text-sm text-[var(--muted)]">Valor estimado — confirme para ver o detalhamento completo.</p>
-      </div>
+      {/* Sem prévia financeira — o preço só aparece no resultado final */}
+      <p className="rounded-2xl bg-[#f7f4ee] px-4 py-3 text-center text-sm font-bold text-[var(--muted)]">
+        Tudo certo? Toque em "Mostrar meu preço" para ver a conta completa.
+      </p>
     </div>
   );
 }
