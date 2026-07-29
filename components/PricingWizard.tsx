@@ -18,6 +18,8 @@ import { AppShell } from "./AppShell";
 import { Field } from "./Field";
 import { MaterialEditor } from "./MaterialEditor";
 import { PackagingEditor } from "./PackagingEditor";
+import { ExtraCostsEditor } from "./ExtraCostsEditor";
+import { MoneyField } from "./MoneyField";
 import { ProductNameInput } from "./ProductNameInput";
 import { PrimaryButton } from "./PrimaryButton";
 import { Progress } from "./Progress";
@@ -29,6 +31,7 @@ import { ReviewStep } from "./ReviewStep";
 const newMaterial = (): MaterialItem => ({
   id: crypto.randomUUID(),
   name: "",
+  brand: "Genérica",
   paid: 0,
   packageAmount: 0,
   packageUnit: "g",
@@ -40,15 +43,20 @@ function emptyInput(isComplete: boolean): PricingInput {
   return {
     productName: "",
     yieldAmount: 1,
+    sellableUnits: undefined,
     materials: [newMaterial()],
     workHours: 1,
     hourlyRate: 15,
     packagingItems: [],
     packagingPerUnit: 0,
     extraCosts: 0,
+    extraCostItems: [],
     wastePercent: isComplete ? 5 : 3,
     salesFeePercent: 0,
+    hasSalesFee: undefined,
     desiredMargin: isComplete ? 35 : 30,
+    competitorPrice: undefined,
+    hasCompetitorRef: undefined,
   };
 }
 
@@ -88,6 +96,7 @@ export function PricingWizard({ mode }: { mode: "rapidin" | "completao" }) {
     setInput((current) => ({
       ...current,
       yieldAmount: defaults.yieldAmount,
+      sellableUnits: current.sellableUnits ?? defaults.yieldAmount,
       wastePercent: defaults.wastePercent,
       workHours: defaults.workHours,
       hourlyRate: defaults.hourlyRate,
@@ -219,6 +228,7 @@ export function PricingWizard({ mode }: { mode: "rapidin" | "completao" }) {
             input={input}
             profile={profile}
             update={update}
+            setInput={setInput}
           />
         )}
 
@@ -254,26 +264,67 @@ export function PricingWizard({ mode }: { mode: "rapidin" | "completao" }) {
   );
 }
 
+function GateButtons({
+  value,
+  onYes,
+  onNo,
+}: {
+  value: boolean | undefined;
+  onYes: () => void;
+  onNo: () => void;
+}) {
+  return (
+    <div className="flex flex-col gap-3 sm:flex-row">
+      <button
+        type="button"
+        onClick={onYes}
+        className={`flex-1 rounded-2xl border-2 px-5 py-4 text-lg font-black transition ${
+          value === true
+            ? "border-[var(--green)] bg-[var(--green-soft)] text-[var(--green-deep)]"
+            : "border-[var(--border)] bg-white hover:border-[var(--green)]"
+        }`}
+      >
+        Sim
+      </button>
+      <button
+        type="button"
+        onClick={onNo}
+        className={`flex-1 rounded-2xl border-2 px-5 py-4 text-lg font-black transition ${
+          value === false
+            ? "border-[var(--green)] bg-[var(--green-soft)] text-[var(--green-deep)]"
+            : "border-[var(--border)] bg-white hover:border-[var(--green)]"
+        }`}
+      >
+        Não
+      </button>
+    </div>
+  );
+}
+
 function QuestionRenderer({
   question,
   input,
   profile,
   update,
+  setInput,
 }: {
   question: WizardQuestion | null;
   input: PricingInput;
   profile: ReturnType<typeof resolveProfile>;
   update: <K extends keyof PricingInput>(field: K, value: PricingInput[K]) => void;
+  setInput: React.Dispatch<React.SetStateAction<PricingInput>>;
 }) {
   if (!question) return null;
   const product = input.productName || "seu produto";
   const title = question.title.replace("{produto}", product);
   const text = question.text.replace("{produto}", product);
+
   return (
     <QuestionBlock eyebrow={question.eyebrow} title={title} text={text}>
       {question.kind === "product" && (
         <ProductNameInput value={input.productName} onChange={(value) => update("productName", value)} />
       )}
+
       {question.kind === "materials" && (
         <MaterialEditor
           items={input.materials}
@@ -283,6 +334,7 @@ function QuestionRenderer({
           suggestedMaterials={profile.suggestedMaterials}
         />
       )}
+
       {question.kind === "packaging" && (
         <PackagingEditor
           items={input.packagingItems ?? []}
@@ -291,6 +343,133 @@ function QuestionRenderer({
           yieldAmount={input.yieldAmount}
         />
       )}
+
+      {question.kind === "yield-time" && (
+        <div className="grid gap-5 sm:grid-cols-2">
+          <Field
+            label={`Quantidade (${profile.displayName ? "unidades" : "unidades"})`}
+            type="number"
+            min={1}
+            step={1}
+            value={input.yieldAmount || ""}
+            onChange={(e) => {
+              const n = Number(e.target.value);
+              update("yieldAmount", n);
+              if (input.sellableUnits === undefined || input.sellableUnits === input.yieldAmount) {
+                update("sellableUnits", n);
+              }
+            }}
+            hint="Quantas unidades essa receita deveria render."
+          />
+          <Field
+            label="Horas de trabalho"
+            type="number"
+            min={0}
+            step={0.25}
+            value={input.workHours || ""}
+            onChange={(e) => update("workHours", Number(e.target.value))}
+            hint="Ex.: 1,5 = 1 hora e 30 minutos."
+          />
+        </div>
+      )}
+
+      {question.kind === "extras-list" && (
+        <div className="space-y-8">
+          {question.field === "extraCostItems" && (
+            <ExtraCostsEditor
+              items={input.extraCostItems ?? []}
+              onChange={(extraCostItems) => update("extraCostItems", extraCostItems)}
+            />
+          )}
+          <MoneyField
+            label="Quanto deseja receber por hora?"
+            value={input.hourlyRate}
+            onChange={(hourlyRate) => update("hourlyRate", hourlyRate)}
+            hint="O valor é só uma referência. Você manda na conta."
+            placeholder="15,00"
+          />
+        </div>
+      )}
+
+      {question.kind === "waste-pair" && (
+        <div className="grid gap-5 sm:grid-cols-2">
+          <Field
+            label="Esta receita deveria render quantas unidades?"
+            type="number"
+            min={1}
+            step={1}
+            value={input.yieldAmount || ""}
+            onChange={(e) => update("yieldAmount", Number(e.target.value))}
+          />
+          <Field
+            label="Quantas ficaram prontas para vender?"
+            type="number"
+            min={0}
+            step={1}
+            value={input.sellableUnits ?? input.yieldAmount ?? ""}
+            onChange={(e) => update("sellableUnits", Number(e.target.value))}
+            hint="O Bota calcula o desperdício sozinho."
+          />
+          {input.sellableUnits !== undefined &&
+            input.yieldAmount > 0 &&
+            input.sellableUnits < input.yieldAmount && (
+              <p className="sm:col-span-2 rounded-2xl bg-[#fff8df] px-4 py-3 text-sm font-bold text-[#8a6a00]">
+                Desperdício estimado:{" "}
+                {Math.round(((input.yieldAmount - input.sellableUnits) / input.yieldAmount) * 1000) /
+                  10}
+                % ({input.yieldAmount - input.sellableUnits} unidade
+                {input.yieldAmount - input.sellableUnits !== 1 ? "s" : ""})
+              </p>
+            )}
+        </div>
+      )}
+
+      {question.kind === "fees-gate" && (
+        <div className="space-y-5">
+          <GateButtons
+            value={input.hasSalesFee}
+            onYes={() => update("hasSalesFee", true)}
+            onNo={() => {
+              update("hasSalesFee", false);
+              update("salesFeePercent", 0);
+            }}
+          />
+          {input.hasSalesFee === true && (
+            <Field
+              label="Taxa sobre a venda (%)"
+              type="number"
+              min={0}
+              max={40}
+              step={0.1}
+              value={input.salesFeePercent || ""}
+              onChange={(e) => update("salesFeePercent", Number(e.target.value))}
+              hint="Cartão, marketplace, app ou comissão."
+            />
+          )}
+        </div>
+      )}
+
+      {question.kind === "competition" && (
+        <div className="space-y-5">
+          <GateButtons
+            value={input.hasCompetitorRef}
+            onYes={() => update("hasCompetitorRef", true)}
+            onNo={() => {
+              update("hasCompetitorRef", false);
+              update("competitorPrice", undefined);
+            }}
+          />
+          {input.hasCompetitorRef === true && (
+            <MoneyField
+              label="Preço da concorrência (referência)"
+              value={input.competitorPrice ?? 0}
+              onChange={(competitorPrice) => update("competitorPrice", competitorPrice)}
+              hint="Não entra no cálculo de custo — só para você comparar."
+            />
+          )}
+        </div>
+      )}
+
       {(question.kind === "number" || question.kind === "margin") && (
         <Field
           label={question.inputLabel ?? question.label}
@@ -302,11 +481,6 @@ function QuestionRenderer({
           onChange={(event) => update(question.field, Number(event.target.value) as never)}
           hint={question.hint}
         />
-      )}
-      {question.kind === "margin" && (
-        <div className="rounded-2xl border border-green-200 bg-[var(--green-soft)] p-4 text-sm font-bold leading-6 text-[var(--green-deep)]">
-          ✅ Na próxima tela você confere tudo antes de ver o preço.
-        </div>
       )}
     </QuestionBlock>
   );

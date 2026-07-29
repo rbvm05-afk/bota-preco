@@ -55,25 +55,29 @@ export function validateInput(input: PricingInput, questions: WizardQuestion[]):
   if (hasStep("materials")) {
     const useful = input.materials.filter((m) => m.name.trim());
     if (useful.length === 0) {
-      issues.push({ stepId: "materials", label: "Materiais", message: "Adicione pelo menos um material com nome." });
+      issues.push({ stepId: "materials", label: "Ingredientes", message: "Adicione pelo menos um material com nome." });
     } else {
       const incomplete = useful.some((m) => !m.paid || !m.packageAmount || !m.usedAmount);
       if (incomplete) {
         issues.push({
           stepId: "materials",
-          label: "Materiais",
+          label: "Ingredientes",
           message: "Preencha preço, quantidade da embalagem e quanto usou.",
         });
       }
     }
   }
 
-  if (hasStep("yield") && (!input.yieldAmount || input.yieldAmount < 1)) {
-    issues.push({ stepId: "yield", label: "Rendimento", message: "Rendimento precisa ser pelo menos 1." });
+  if (hasStep("yield-time") && (!input.yieldAmount || input.yieldAmount < 1)) {
+    issues.push({ stepId: "yield-time", label: "Rendimento", message: "Rendimento precisa ser pelo menos 1." });
   }
 
-  if (hasStep("hours") && input.workHours < 0) {
-    issues.push({ stepId: "hours", label: "Tempo", message: "Horas não podem ser negativas." });
+  if (hasStep("yield-time") && input.workHours < 0) {
+    issues.push({ stepId: "yield-time", label: "Tempo", message: "Horas não podem ser negativas." });
+  }
+
+  if (hasStep("waste") && input.sellableUnits !== undefined && input.sellableUnits < 0) {
+    issues.push({ stepId: "waste", label: "Perdas", message: "Unidades prontas não podem ser negativas." });
   }
 
   return issues;
