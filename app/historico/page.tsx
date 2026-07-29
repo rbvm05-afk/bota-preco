@@ -35,7 +35,8 @@ export default function HistoricoPage() {
   };
 
   const continueToCompletao = (item: SavedCalculation) => {
-    stashForCompletao(item.input, item.id);
+    const resolved = resolveCalculation(item);
+    stashForCompletao(item.input, item.id, resolved.result.healthyPrice);
     window.location.href = "/completao";
   };
 

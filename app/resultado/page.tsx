@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { AdSlot } from "@/components/AdSlot";
 import { ContinuityInvite } from "@/components/ContinuityInvite";
+import { RapidinComparison } from "@/components/RapidinComparison";
 import { PriceSimulator } from "@/components/PriceSimulator";
 import { calculatePrice, money } from "@/src/domain/pricing";
 import { buildSmartPricingReport } from "@/src/domain/insights";
@@ -15,6 +16,8 @@ type CurrentSession = {
   mode: string;
   input: PricingInput;
   result?: PricingResult;
+  parentId?: string;
+  rapidinHealthyPrice?: number;
 };
 
 export default function ResultadoPage() {
@@ -53,7 +56,7 @@ export default function ResultadoPage() {
     );
   }
 
-  const { input, result, mode, id } = current;
+  const { input, result, mode, id, rapidinHealthyPrice } = current;
   const { explanation, diagnosis, confidence, insights } = report;
   const fee =
     input.hasSalesFee === false ? 0 : (input.salesFeePercent ?? 0) / 100;
@@ -62,6 +65,7 @@ export default function ResultadoPage() {
   const units = Math.max(1, result.sellableUnits || input.yieldAmount || 1);
   const profitPerHour = (profitPerUnit * units) / hours;
   const isRapidin = mode === "rapidin";
+  const isCompletao = mode === "completao";
 
   const signalTone: "red" | "yellow" | "green" =
     diagnosis.tone === "red" || diagnosis.tone === "orange"
@@ -102,7 +106,7 @@ export default function ResultadoPage() {
           <div className="absolute -right-12 -top-16 size-48 rounded-full border-[28px] border-white/5" />
           <div className="flex flex-wrap items-center gap-2">
             <span className="inline-flex rounded-full bg-white/10 px-3 py-1.5 text-xs font-black uppercase tracking-[.15em]">
-              🟢 Preço recomendado
+              {isCompletao ? "📋 Diagnóstico Completão" : "🟢 Preço recomendado"}
             </span>
             <span className={`inline-flex rounded-full px-3 py-1.5 text-xs font-black ${confClass}`}>
               {confidence.label}
@@ -129,13 +133,16 @@ export default function ResultadoPage() {
               <p className="text-xs text-white/70">{signalCopy.hint}</p>
             </div>
           </div>
-
-          {input.hasCompetitorRef && input.competitorPrice != null && input.competitorPrice > 0 && (
-            <p className="mt-3 text-sm text-white/65">
-              Concorrência (referência): {money(input.competitorPrice)} — não entra no cálculo.
-            </p>
-          )}
         </div>
+
+        {isCompletao &&
+          rapidinHealthyPrice != null &&
+          rapidinHealthyPrice > 0 && (
+            <RapidinComparison
+              rapidinPrice={rapidinHealthyPrice}
+              completaoPrice={result.healthyPrice}
+            />
+          )}
 
         <div className="grid gap-3 sm:grid-cols-3">
           <SignalCard
@@ -226,23 +233,11 @@ export default function ResultadoPage() {
               />
               <ExplainItem
                 term="🟢 Preço recomendado"
-                def={`O Bota sugere ${money(result.healthyPrice)} — cobre custos, seu tempo e deixa margem para continuar. Este é o valor principal.`}
-              />
-              <ExplainItem
-                term="Margem maior (oportunidade)"
-                def={`Se o mercado pagar mais (produto premium, marca forte), valores acima de ${money(result.premiumPrice)} aumentam o lucro sem mudar o custo.`}
-              />
-              <ExplainItem
-                term="Lucro"
-                def="O que sobra depois de pagar tudo (materiais, tempo, embalagem, taxas). Não é o valor que entra no caixa."
-              />
-              <ExplainItem
-                term="Custo por unidade"
-                def={`${money(result.costPerUnit)} — quanto cada unidade custou para ficar pronta para vender.`}
+                def={`O Bota sugere ${money(result.healthyPrice)} — cobre custos, seu tempo e deixa margem para continuar.`}
               />
               <ExplainItem
                 term="Lucro vs faturamento"
-                def="Faturamento é o que o cliente paga. Lucro é o que sobra depois de todos os custos. Os dois números são diferentes."
+                def="Faturamento é o que o cliente paga. Lucro é o que sobra depois de todos os custos."
               />
             </dl>
           )}
@@ -272,18 +267,6 @@ export default function ResultadoPage() {
           </ul>
         </div>
 
-        <div className="rounded-[1.5rem] border border-[var(--border)] bg-white p-5">
-          <div className="flex items-center justify-between gap-3">
-            <strong className="font-black">{confidence.label}</strong>
-            <span className="text-sm font-bold text-[var(--muted)]">{confidence.score}/100</span>
-          </div>
-          <ul className="mt-3 space-y-1 text-sm text-[var(--muted)]">
-            {confidence.reasons.map((r) => (
-              <li key={r}>· {r}</li>
-            ))}
-          </ul>
-        </div>
-
         <div className="surface rounded-[2rem] p-6 sm:p-8">
           <div className="flex items-end justify-between gap-4">
             <div>
@@ -306,8 +289,13 @@ export default function ResultadoPage() {
           </div>
         </div>
 
-        {/* Continuidade Rapidin → Completão */}
-        {isRapidin && <ContinuityInvite input={input} parentId={id} />}
+        {isRapidin && (
+          <ContinuityInvite
+            input={input}
+            parentId={id}
+            rapidinHealthyPrice={result.healthyPrice}
+          />
+        )}
 
         <AdSlot placement="result-after-breakdown" />
 
