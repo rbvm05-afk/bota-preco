@@ -8,6 +8,7 @@ import Link from "next/link";
 import { MakerTicker } from "@/components/MakerTicker";
 
 const footerLinks = [
+  { href: "/aprenda", label: "Aprenda" },
   { href: "/sobre", label: "Sobre" },
   { href: "/como-funciona", label: "Como funciona" },
   { href: "/faq", label: "Perguntas frequentes" },
