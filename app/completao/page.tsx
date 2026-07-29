@@ -1,14 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { PricingWizard } from "@/components/PricingWizard";
-import { loadCompletaoStash, clearCompletaoStash } from "@/lib/continuity";
+import { CompletaoWizard } from "@/components/CompletaoWizard";
+import {
+  loadCompletaoStash,
+  clearCompletaoStash,
+  saveCompletaoParent,
+} from "@/lib/continuity";
 import { saveDraft } from "@/lib/DraftManager";
 
-/**
- * Ao vir do Rapidin, grava o input no draft do Completão
- * para o PricingWizard hidratar automaticamente.
- */
 export default function CompletaoPage() {
   const [ready, setReady] = useState(false);
 
@@ -16,6 +16,10 @@ export default function CompletaoPage() {
     const stash = loadCompletaoStash();
     if (stash?.input) {
       saveDraft("completao", stash.input, 0);
+      saveCompletaoParent({
+        parentId: stash.parentId,
+        rapidinHealthyPrice: stash.rapidinHealthyPrice,
+      });
       clearCompletaoStash();
     }
     setReady(true);
@@ -29,5 +33,5 @@ export default function CompletaoPage() {
     );
   }
 
-  return <PricingWizard mode="completao" />;
+  return <CompletaoWizard />;
 }

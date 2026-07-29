@@ -7,14 +7,16 @@ import { stashForCompletao } from "@/lib/continuity";
 export function ContinuityInvite({
   input,
   parentId,
+  rapidinHealthyPrice,
 }: {
   input: PricingInput;
   parentId?: string;
+  rapidinHealthyPrice?: number;
 }) {
   const router = useRouter();
 
   const go = () => {
-    stashForCompletao(input, parentId);
+    stashForCompletao(input, parentId, rapidinHealthyPrice);
     router.push("/completao");
   };
 
